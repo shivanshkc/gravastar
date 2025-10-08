@@ -2,7 +2,6 @@ package physics
 
 import (
 	"maps"
-	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -90,7 +89,7 @@ func (g *gravityEngine) Tick() {
 				distanceMagSquared := distanceMag * distanceMag
 
 				// Softening to avoid singularities.
-				softeningSquared := math.Pow(0.05, 2)
+				softeningSquared := 0.05 * 0.05
 				// The last distanceMag multiplication is due to vector form of the gravity equation,
 				// and so, softening should not be added to it.
 				denominator := (distanceMagSquared + softeningSquared) * distanceMag
