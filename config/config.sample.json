@@ -1,0 +1,9 @@
+{
+  "httpServer": {
+    "addr": "localhost:8080"
+  },
+  "logger": {
+    "level": "debug",
+    "pretty": true
+  }
+}

@@ -1,0 +1,32 @@
+name: CI
+on:
+  # Runs on all pull-request events on all branches.
+  pull_request:
+
+permissions:
+  # Can only read the source code.
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.25
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --fix=false --timeout 5m
+
+      - name: Test
+        run: CGO_ENABLED=1 go test -race ./...
+
+      - name: Build
+        run: go build cmd/gravastar/main.go
