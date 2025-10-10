@@ -16,6 +16,8 @@ type Config struct {
 		Level  string `json:"level"`
 		Pretty bool   `json:"pretty"`
 	} `json:"logger"`
+
+	TargetFPS uint `json:"targetFPS"`
 }
 
 // Load config from the given JSON file.

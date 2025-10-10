@@ -1,6 +1,7 @@
 package physics
 
 import (
+	"context"
 	"maps"
 	"runtime"
 	"sync"
@@ -9,8 +10,8 @@ import (
 
 // GravityEngine encapsulates methods to manage a gravity simulation.
 type GravityEngine interface {
-	// Tick advances the simulation further in time.
-	Tick()
+	// Run the simulation. This method returns only when the context expires.
+	Run(ctx context.Context, targetFPS uint)
 
 	// Read the current state of the simulation.
 	Read() map[string]Dot
@@ -32,22 +33,41 @@ type gravityEngine struct {
 	height float64
 }
 
-// Tick calculates the gravitational effect on each Dot due to all other Dots and updates its
-// properties (position, velocity etc). Since these calculations are time-dependent, Tick uses
-// 10 milliseconds as the time delta.
+func (g *gravityEngine) Run(ctx context.Context, targetFPS uint) {
+	// Ticker provides an efficient way to run the simulation at the given target FPS.
+	ticker := time.NewTicker(time.Second / time.Duration(targetFPS))
+	defer ticker.Stop()
+
+	timeLast := time.Now()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			timeNow := time.Now()
+			// Submit precise delta for correct physics calculations.
+			g.tick(timeNow.Sub(timeLast))
+			timeLast = timeNow
+		}
+	}
+}
+
+// tick calculates the gravitational effect on each Dot due to all other Dots and updates its properties
+// (position, velocity etc.). Since these calculations are time-dependent, Tick accepts a time delta.
 //
-// For efficiency, Tick uses goroutines for calculation. The number of goroutines launched is
-// equal to runtime.NumCPU().
-func (g *gravityEngine) Tick() {
+// For efficiency, Tick uses goroutines for calculation. The number of goroutines launched is equal to runtime.NumCPU().
+func (g *gravityEngine) tick(delta time.Duration) {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	// Delta time. This is required for motion physics.
-	delta := (10 * time.Millisecond).Seconds()
 	// If no dots, nothing to calculate.
 	if len(g.dots) == 0 {
 		return
 	}
+
+	// SI units.
+	deltaSec := delta.Seconds()
 
 	// To control the batch size.
 	semaphore := make(chan struct{}, runtime.NumCPU())
@@ -100,12 +120,12 @@ func (g *gravityEngine) Tick() {
 			}
 
 			// Second law of motion to calculate the displacement due to acceleration.
-			halfAtSquared := totalAcceleration.Mul(0.5 * delta * delta)
-			displacement := dot.Velocity.Mul(delta).Add(halfAtSquared)
+			halfAtSquared := totalAcceleration.Mul(0.5 * deltaSec * deltaSec)
+			displacement := dot.Velocity.Mul(deltaSec).Add(halfAtSquared)
 			dot.Position = dot.Position.Add(displacement)
 
 			// First law of motion to calculate the final velocity of the dot.
-			dot.Velocity = dot.Velocity.Add(totalAcceleration.Mul(delta))
+			dot.Velocity = dot.Velocity.Add(totalAcceleration.Mul(deltaSec))
 
 			// Wall collision detection and response
 			// Left wall collision

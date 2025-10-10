@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,16 +34,10 @@ func main() {
 
 	// Initialize the HTTP server.
 	engine := physics.NewGravityEngine(800, 600)
-
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				engine.Tick()
-			}
-		}
+		slog.InfoContext(ctx, "starting gravity engine")
+		engine.Run(ctx, conf.TargetFPS)
+		slog.InfoContext(ctx, "gravity engine stopped")
 	}()
 
 	server := &http.Server{Handler: &handlers.Handler{Engine: engine}}
