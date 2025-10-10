@@ -34,7 +34,7 @@ func (m Middleware) AccessLogger(next http.Handler) http.Handler {
 		cw := &responseWriterWithCode{ResponseWriter: w}
 
 		// Request entry log.
-		slog.InfoContext(ctx, "request received", "url", r.URL.String())
+		slog.InfoContext(ctx, "request received", "url", r.URL.String(), "method", r.Method)
 		// Release control to the next middleware or handler.
 		next.ServeHTTP(cw, r)
 		// Request exit log.

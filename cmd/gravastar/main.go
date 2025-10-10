@@ -33,6 +33,18 @@ func main() {
 
 	// Initialize the HTTP server.
 	engine := physics.NewGravityEngine(800, 600)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				engine.Tick()
+			}
+		}
+	}()
+
 	server := &http.Server{Handler: &handlers.Handler{Engine: engine}}
 
 	// Start the http server. The server will shut down when the context expires.
