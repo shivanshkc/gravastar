@@ -1,5 +1,6 @@
 # Compiled output
 bin
+.DS_Store
 
 # IDE Metadata
 .idea
