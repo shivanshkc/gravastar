@@ -6,12 +6,12 @@ const (
 
 // Dot represents a circular gravitational body.
 type Dot struct {
-	ID string
+	ID string `json:"id"`
 
-	Mass     float64
-	Radius   float64
-	Position Vec3
-	Velocity Vec3
+	Mass     float64 `json:"mass"`
+	Radius   float64 `json:"radius"`
+	Position Vec3    `json:"position"`
+	Velocity Vec3    `json:"velocity"`
 
-	Color Vec3
+	Color Vec3 `json:"color"`
 }

@@ -13,6 +13,11 @@ type GravityEngine interface {
 	// Run the simulation. This method returns only when the context expires.
 	Run(ctx context.Context, targetFPS uint)
 
+	// Tick advances the simulation by one step. It makes GravityEngine compatible with Game Engines like Ebiten.
+	//
+	// Tick and Run use the same mutex under the hoods so they can be called simultaneously.
+	Tick(delta time.Duration)
+
 	// Read the current state of the simulation.
 	Read() map[string]Dot
 
@@ -47,17 +52,17 @@ func (g *gravityEngine) Run(ctx context.Context, targetFPS uint) {
 		case <-ticker.C:
 			timeNow := time.Now()
 			// Submit precise delta for correct physics calculations.
-			g.tick(timeNow.Sub(timeLast))
+			g.Tick(timeNow.Sub(timeLast))
 			timeLast = timeNow
 		}
 	}
 }
 
-// tick calculates the gravitational effect on each Dot due to all other Dots and updates its properties
+// Tick calculates the gravitational effect on each Dot due to all other Dots and updates its properties
 // (position, velocity etc.). Since these calculations are time-dependent, Tick accepts a time delta.
 //
 // For efficiency, Tick uses goroutines for calculation. The number of goroutines launched is equal to runtime.NumCPU().
-func (g *gravityEngine) tick(delta time.Duration) {
+func (g *gravityEngine) Tick(delta time.Duration) {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 

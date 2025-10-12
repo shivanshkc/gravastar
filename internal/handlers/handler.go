@@ -42,7 +42,11 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Engine.AddDot(dot)
-	httputils.Write(w, http.StatusOK, nil, map[string]string{"dotID": dot.ID})
+
+	// Return the full list of dots in the response so the client can sync their simulation immediately.
+	dots := h.Engine.Read()
+	// Add the ID of the newly created dot in the headers so the client can easily identify it.
+	httputils.Write(w, http.StatusOK, map[string]string{"X-Dot-Id": dot.ID}, dots)
 }
 
 func (h *Handler) ListDots(w http.ResponseWriter, r *http.Request) {
