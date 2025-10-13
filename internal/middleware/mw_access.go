@@ -18,13 +18,13 @@ func (m Middleware) AccessLogger(next http.Handler) http.Handler {
 		start := time.Now()
 
 		// Add an ID to the request to uniquely identify it.
-		newCtx := logger.AddContextValue(ctx, "request_id", uuid.NewString())
+		newCtx := logger.AddContextValue(ctx, "request-id", uuid.NewString())
 
 		// Respect the correlation ID sent by the user.
 		correlationID := r.Header.Get("X-Correlation-Id")
 		if correlationID == "" {
 			// If not sent, generate own.
-			newCtx = logger.AddContextValue(newCtx, "correlation_id", uuid.New().String())
+			newCtx = logger.AddContextValue(newCtx, "correlation-id", uuid.New().String())
 		}
 
 		// Update the request with the new context.
