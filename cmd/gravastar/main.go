@@ -33,7 +33,7 @@ func main() {
 	logger.Init(os.Stdout, conf.Logger.Level, conf.Logger.Pretty)
 
 	// Initialize the HTTP server.
-	engine := physics.NewGravityEngine(800, 600)
+	engine := physics.NewGravityEngine(1000, 1000)
 	go func() {
 		slog.InfoContext(ctx, "starting gravity engine")
 		engine.Run(ctx, conf.TargetFPS)

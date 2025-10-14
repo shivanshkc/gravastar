@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 600
+	screenWidth  = 1000
+	screenHeight = 1000
 	dotRadius    = 3
 	dotMass      = 1
 )

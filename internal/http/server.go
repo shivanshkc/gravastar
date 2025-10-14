@@ -62,8 +62,9 @@ func (s *Server) mux() http.Handler {
 	mux := http.NewServeMux()
 	mw := middleware.Middleware{}
 
-	mux.HandleFunc("GET /api/dots", s.Handler.ListDots)
 	mux.HandleFunc("POST /api/dots", s.Handler.CreateDot)
+	mux.HandleFunc("GET /api/dots", s.Handler.ListDots)
+	mux.HandleFunc("DELETE /api/dots", s.Handler.ClearDots)
 
 	mux.HandleFunc("GET /api", func(w http.ResponseWriter, r *http.Request) {
 		httputils.Write(w, http.StatusOK, nil, map[string]any{"code": "OK"})

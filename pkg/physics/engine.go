@@ -2,14 +2,21 @@ package physics
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"runtime"
 	"sync"
 	"time"
 )
 
+// ErrDotAlreadyExists is returned when a new dot is attempted to be added to the Engine but its ID is not unique.
+var ErrDotAlreadyExists = errors.New("dot with same ID already exists")
+
 // GravityEngine encapsulates methods to manage a gravity simulation.
 type GravityEngine interface {
+	// Size returns the width and height of the simulation respectively.
+	Size() (int, int)
+
 	// Run the simulation. This method returns only when the context expires.
 	Run(ctx context.Context, targetFPS uint)
 
@@ -21,21 +28,28 @@ type GravityEngine interface {
 	// Read the current state of the simulation.
 	Read() map[string]Dot
 
-	// AddDot adds a new Dot to the simulation.
-	AddDot(Dot)
+	// AddDot adds a new Dot to the simulation. It requires the dot to have a unique ID.
+	// If it's not unique, ErrDotAlreadyExists is returned.
+	AddDot(Dot) error
 
 	// RemoveDot removes the Dot with the given ID from the simulation.
 	//
 	// If no Dot is found with the given ID, the returned param is false, otherwise true.
 	RemoveDot(id string) bool
+
+	RemoveAllDots()
 }
 
 // gravityEngine implements the GravityEngine interface.
 type gravityEngine struct {
 	dots   map[string]Dot
 	mutex  *sync.RWMutex
-	width  float64
-	height float64
+	width  int
+	height int
+}
+
+func (g *gravityEngine) Size() (int, int) {
+	return g.width, g.height
 }
 
 func (g *gravityEngine) Run(ctx context.Context, targetFPS uint) {
@@ -139,8 +153,8 @@ func (g *gravityEngine) Tick(delta time.Duration) {
 				dot.Velocity.X = -dot.Velocity.X
 			}
 			// Right wall collision
-			if dot.Position.X+dot.Radius >= g.width {
-				dot.Position.X = g.width - dot.Radius
+			if dot.Position.X+dot.Radius >= float64(g.width) {
+				dot.Position.X = float64(g.width) - dot.Radius
 				dot.Velocity.X = -dot.Velocity.X
 			}
 			// Top wall collision
@@ -149,8 +163,8 @@ func (g *gravityEngine) Tick(delta time.Duration) {
 				dot.Velocity.Y = -dot.Velocity.Y
 			}
 			// Bottom wall collision
-			if dot.Position.Y+dot.Radius >= g.height {
-				dot.Position.Y = g.height - dot.Radius
+			if dot.Position.Y+dot.Radius >= float64(g.height) {
+				dot.Position.Y = float64(g.height) - dot.Radius
 				dot.Velocity.Y = -dot.Velocity.Y
 			}
 
@@ -172,11 +186,16 @@ func (g *gravityEngine) Read() map[string]Dot {
 	return maps.Clone(g.dots)
 }
 
-func (g *gravityEngine) AddDot(dot Dot) {
+func (g *gravityEngine) AddDot(dot Dot) error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
+	if _, ok := g.dots[dot.ID]; ok {
+		return ErrDotAlreadyExists
+	}
+
 	g.dots[dot.ID] = dot
+	return nil
 }
 
 func (g *gravityEngine) RemoveDot(id string) bool {
@@ -191,8 +210,14 @@ func (g *gravityEngine) RemoveDot(id string) bool {
 	return true
 }
 
+func (g *gravityEngine) RemoveAllDots() {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+	g.dots = map[string]Dot{}
+}
+
 // NewGravityEngine returns a new GravityEngine implementation.
-func NewGravityEngine(width, height float64) GravityEngine {
+func NewGravityEngine(width, height int) GravityEngine {
 	return &gravityEngine{
 		dots:   make(map[string]Dot),
 		mutex:  &sync.RWMutex{},
