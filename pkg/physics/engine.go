@@ -36,8 +36,6 @@ type GravityEngine interface {
 	//
 	// If no Dot is found with the given ID, the returned param is false, otherwise true.
 	RemoveDot(id string) bool
-
-	RemoveAllDots()
 }
 
 // gravityEngine implements the GravityEngine interface.
@@ -208,12 +206,6 @@ func (g *gravityEngine) RemoveDot(id string) bool {
 
 	delete(g.dots, id)
 	return true
-}
-
-func (g *gravityEngine) RemoveAllDots() {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	g.dots = map[string]Dot{}
 }
 
 // NewGravityEngine returns a new GravityEngine implementation.

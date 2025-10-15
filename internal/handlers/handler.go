@@ -21,13 +21,12 @@ type Handler struct {
 func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 	// TODO: Rate limiting.
 	// TODO: Only allow use from the browser.
+	// TODO: Validate color input.
 
 	var body struct {
-		ID       string `json:"id"`
-		Position struct {
-			X float64 `json:"x"`
-			Y float64 `json:"y"`
-		} `json:"position"`
+		ID       string       `json:"id"`
+		Position physics.Vec3 `json:"position"`
+		Color    physics.Vec3 `json:"color"`
 	}
 
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1024)).Decode(&body); err != nil {
@@ -44,7 +43,7 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate position.
+	// Validate position.x.
 	width, height := h.Engine.Size()
 	if body.Position.X < 0 || body.Position.X > float64(width) {
 		slog.ErrorContext(r.Context(), "position x value out of bounds", "position", body.Position)
@@ -52,6 +51,7 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate position.y.
 	if body.Position.Y < 0 || body.Position.Y > float64(height) {
 		slog.ErrorContext(r.Context(), "position y value out of bounds", "position", body.Position)
 		httputils.WriteErr(w, errutils.BadRequest().WithReasonStr("position out of bounds"))
@@ -64,7 +64,7 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 		Radius:   3,
 		Position: physics.Vec3{X: body.Position.X, Y: body.Position.Y, Z: 0},
 		Velocity: physics.Vec3{},
-		Color:    physics.NewRandVec3(),
+		Color:    body.Color,
 	}
 
 	if err := h.Engine.AddDot(dot); err != nil {
@@ -84,9 +84,4 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListDots(w http.ResponseWriter, r *http.Request) {
 	dots := h.Engine.Read()
 	httputils.Write(w, http.StatusOK, nil, dots)
-}
-
-func (h *Handler) ClearDots(w http.ResponseWriter, r *http.Request) {
-	h.Engine.RemoveAllDots()
-	httputils.Write(w, http.StatusNoContent, nil, nil)
 }
