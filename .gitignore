@@ -7,7 +7,7 @@ bin
 .vscode
 
 # Configs
-configs/configs.yaml
+config/config.json
 
 # Profiling data
 pprof
