@@ -1,16 +1,5 @@
 version: "2"
-linters:
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+
 issues:
   fix: true
 formatters:
@@ -32,9 +21,3 @@ formatters:
       # Allow custom ordering as defined above.
       # Default: false
       custom-order: true
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

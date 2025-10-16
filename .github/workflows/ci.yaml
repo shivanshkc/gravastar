@@ -19,6 +19,19 @@ jobs:
         with:
           go-version: 1.25
 
+      - name: Install Ebiten dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libx11-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libxxf86vm-dev
+        shell: bash
+
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:

@@ -20,6 +20,19 @@ jobs:
         with:
           go-version: 1.25
 
+      - name: Install Ebiten dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            libx11-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libxxf86vm-dev
+        shell: bash
+
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
@@ -44,3 +57,18 @@ jobs:
       - uses: ./.github/actions/semver
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy
+    needs: semver
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/deploy
+        with:
+          server_ip: ${{ fromJSON(secrets.SSH_DETAILS).server_ip }}
+          ssh_private_key: ${{ fromJSON(secrets.SSH_DETAILS).ssh_private_key }}
+          ssh_username: ${{ fromJSON(secrets.SSH_DETAILS).ssh_username }}
+          service_name: gravastar
+          network_name: my-network
+          config_json: ${{ secrets.CONFIG_JSON }}
