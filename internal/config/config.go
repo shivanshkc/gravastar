@@ -17,7 +17,8 @@ type Config struct {
 		Pretty bool   `json:"pretty"`
 	} `json:"logger"`
 
-	TargetFPS uint `json:"targetFPS"`
+	TargetFPS        uint `json:"targetFPS"`
+	WebsocketMaxConn int  `json:"websocketMaxConn"`
 }
 
 // Load config from the given JSON file.

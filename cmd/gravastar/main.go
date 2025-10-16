@@ -4,14 +4,19 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/gorilla/websocket"
 
 	"github.com/shivanshkc/gravastar/internal/config"
 	"github.com/shivanshkc/gravastar/internal/handlers"
-	"github.com/shivanshkc/gravastar/internal/http"
+	httpx "github.com/shivanshkc/gravastar/internal/http"
 	"github.com/shivanshkc/gravastar/internal/logger"
+	"github.com/shivanshkc/gravastar/pkg/connor"
 	"github.com/shivanshkc/gravastar/pkg/physics"
 )
 
@@ -40,7 +45,17 @@ func main() {
 		slog.InfoContext(ctx, "gravity engine stopped")
 	}()
 
-	server := &http.Server{Handler: &handlers.Handler{Engine: engine}}
+	// Upgrader for websocket connections.
+	upgrader := &websocket.Upgrader{
+		HandshakeTimeout: time.Second * 10,
+		CheckOrigin:      func(*http.Request) bool { return true },
+	}
+
+	// Websocket connection manager.
+	manager := connor.NewManager(conf.WebsocketMaxConn, time.Second*30, slog.Default())
+
+	// HTTP + websocket server.
+	server := &httpx.Server{Handler: handlers.NewHandler(engine, upgrader, manager)}
 
 	// Start the http server. The server will shut down when the context expires.
 	if err := server.Start(ctx, conf.HttpServer.Addr); err != nil {

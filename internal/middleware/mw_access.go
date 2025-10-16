@@ -1,7 +1,11 @@
 package middleware
 
 import (
+	"bufio"
+	"errors"
+	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 
@@ -51,4 +55,21 @@ type responseWriterWithCode struct {
 func (r *responseWriterWithCode) WriteHeader(statusCode int) {
 	r.statusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+// Hijack method belongs to the http.Hijacker interface. It is necessary when working with websockets.
+func (r *responseWriterWithCode) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	// Get the underlying hijacker interface.
+	hijacker, asserted := r.ResponseWriter.(http.Hijacker)
+	if !asserted {
+		return nil, nil, errors.New("hijack not supported")
+	}
+
+	// Call the underlying hijacker.
+	conn, readWriter, err := hijacker.Hijack()
+	if err != nil {
+		return nil, nil, fmt.Errorf("error in wrapped hijacker: %w", err)
+	}
+
+	return conn, readWriter, nil
 }

@@ -6,5 +6,6 @@
     "level": "debug",
     "pretty": true
   },
-  "targetFPS": 120
+  "targetFPS": 120,
+  "websocketMaxConn": 10000
 }

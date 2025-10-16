@@ -64,6 +64,7 @@ func (s *Server) mux() http.Handler {
 
 	mux.HandleFunc("POST /api/dots", s.Handler.CreateDot)
 	mux.HandleFunc("GET /api/dots", s.Handler.ListDots)
+	mux.HandleFunc("GET /api/conn", s.Handler.GetConn)
 
 	mux.HandleFunc("GET /api", func(w http.ResponseWriter, r *http.Request) {
 		httputils.Write(w, http.StatusOK, nil, map[string]any{"code": "OK"})

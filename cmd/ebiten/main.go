@@ -108,5 +108,5 @@ func (g *Game) addDotOnClick() {
 		Color:    physics.NewRandVec3(),
 	}
 
-	g.engine.AddDot(dot)
+	_ = g.engine.AddDot(dot)
 }
