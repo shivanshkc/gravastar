@@ -1,12 +1,13 @@
 # Compiled output
 bin
+.DS_Store
 
 # IDE Metadata
 .idea
 .vscode
 
 # Configs
-configs/configs.yaml
+config/config.json
 
 # Profiling data
 pprof

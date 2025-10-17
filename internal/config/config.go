@@ -9,13 +9,17 @@ import (
 // Config encapsulates all config required by the application.
 type Config struct {
 	HttpServer struct {
-		Addr string `json:"addr"`
+		Addr      string `json:"addr"`
+		StaticDir string `json:"staticDir"`
 	} `json:"httpServer"`
 
 	Logger struct {
 		Level  string `json:"level"`
 		Pretty bool   `json:"pretty"`
 	} `json:"logger"`
+
+	TargetFPS        uint `json:"targetFPS"`
+	WebsocketMaxConn int  `json:"websocketMaxConn"`
 }
 
 // Load config from the given JSON file.

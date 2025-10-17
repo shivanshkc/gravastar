@@ -50,5 +50,5 @@ container:
 
 	@echo "################ Running new container ################"
 	@$(DOCKER) run --name $(application_container_name) --detach --publish 8080:8080 \
-		--volume $(PWD)/configs/configs.yaml:/etc/$(application_name)/configs.yaml \
+		--volume $(PWD)/config/config.json:/service/config/config.json \
 		$(application_image_name):latest

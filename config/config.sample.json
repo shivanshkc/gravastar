@@ -1,9 +1,12 @@
 {
   "httpServer": {
-    "addr": "localhost:8080"
+    "addr": "localhost:8080",
+    "staticDir": "static"
   },
   "logger": {
     "level": "debug",
     "pretty": true
-  }
+  },
+  "targetFPS": 120,
+  "websocketMaxConn": 10000
 }

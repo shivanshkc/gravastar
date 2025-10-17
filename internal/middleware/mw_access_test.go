@@ -37,7 +37,7 @@ func TestAccessLogger(t *testing.T) {
 	// Fetch context-info to verify if it was set correctly by the middleware.
 	ctxInfo := logger.GetContextValues(req.Context())
 	// Verify if the request ID was initialized.
-	requestID, exists := ctxInfo["request_id"]
+	requestID, exists := ctxInfo["request-id"]
 	if !exists {
 		t.Errorf("expected request ID to be present but it's not")
 		return

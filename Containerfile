@@ -26,6 +26,7 @@ WORKDIR /service
 
 # Copy the files to the production image from the builder stage.
 COPY --from=builder /service/bin /service/bin
+COPY --from=builder /service/static /service/static
 
 # Run the web service on container startup.
 CMD ["/service/bin/gravastar"]
