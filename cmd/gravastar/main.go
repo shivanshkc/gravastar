@@ -55,10 +55,14 @@ func main() {
 	manager := connor.NewManager(conf.WebsocketMaxConn, time.Second*30, slog.Default())
 
 	// HTTP + websocket server.
-	server := &httpx.Server{Handler: handlers.NewHandler(engine, upgrader, manager)}
+	server, err := httpx.NewServer(conf.HttpServer.Addr, conf.HttpServer.StaticDir,
+		handlers.NewHandler(engine, upgrader, manager))
+	if err != nil {
+		panic("failed to create server: " + err.Error())
+	}
 
 	// Start the http server. The server will shut down when the context expires.
-	if err := server.Start(ctx, conf.HttpServer.Addr); err != nil {
+	if err := server.Start(ctx); err != nil {
 		panic("error in server.Start call: " + err.Error())
 	}
 }

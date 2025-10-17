@@ -9,7 +9,8 @@ import (
 // Config encapsulates all config required by the application.
 type Config struct {
 	HttpServer struct {
-		Addr string `json:"addr"`
+		Addr      string `json:"addr"`
+		StaticDir string `json:"staticDir"`
 	} `json:"httpServer"`
 
 	Logger struct {
