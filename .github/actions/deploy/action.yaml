@@ -33,11 +33,6 @@ runs:
         chmod 600 ~/.ssh/deploy_key
         ssh-keyscan -H ${{ inputs.server_ip }} >> ~/.ssh/known_hosts
 
-    - name: Correct frontend configuration
-      shell: bash
-      run: |
-        sed -i 's|http://localhost:8080|https://gravastar.shivansh.io|g' static/src/back.js
-
     - name: Build Docker image
       shell: bash
       run: |

@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,6 +57,11 @@ func main() {
 	// Websocket connection manager.
 	manager := connor.NewManager(conf.WebsocketMaxConn, time.Second*30, slog.Default())
 
+	// Update frontend config.
+	if err := updateFrontendConfig(conf.HttpServer.StaticDir, conf.HttpServer.PublicAddr); err != nil {
+		panic("failed to update frontend config: " + err.Error())
+	}
+
 	// HTTP + websocket server.
 	server, err := httpx.NewServer(conf.HttpServer.Addr, conf.HttpServer.StaticDir,
 		handlers.NewHandler(engine, upgrader, manager))
@@ -65,4 +73,24 @@ func main() {
 	if err := server.Start(ctx); err != nil {
 		panic("error in server.Start call: " + err.Error())
 	}
+}
+
+// updateFrontendConfig updates the config in the frontend code.
+//
+// It should be called before any files are served.
+func updateFrontendConfig(staticDir, publicAddr string) error {
+	const defaultConfig = "http://localhost:8080"
+	filePath := path.Join(staticDir, "src/back.js")
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read back.js: %w", err)
+	}
+
+	updatedContent := strings.ReplaceAll(string(content), defaultConfig, publicAddr)
+	if err := os.WriteFile(filePath, []byte(updatedContent), os.ModePerm); err != nil {
+		return fmt.Errorf("failed to write back.js: %w", err)
+	}
+
+	return nil
 }

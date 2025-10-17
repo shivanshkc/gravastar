@@ -1,6 +1,7 @@
 {
   "httpServer": {
     "addr": "localhost:8080",
+    "publicAddr": "http://localhost:8080",
     "staticDir": "static"
   },
   "logger": {
