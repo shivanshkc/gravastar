@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/shivanshkc/gravastar/compare/v1.0.0...v1.0.1) (2025-10-17)
+
+
+### Bug Fixes
+
+* **ci:** fix frontend configs upon deployment ([95bf8f7](https://github.com/shivanshkc/gravastar/commit/95bf8f78adb529cebb5f7e6d6a481f40e958dfed))
+
 # 1.0.0 (2025-10-17)
 
 
