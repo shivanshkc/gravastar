@@ -24,7 +24,6 @@
             width: 100vw;
         }
 
-        /* Sync button at the top right. */
         #sync-button {
             position: absolute;
             bottom: 10px;
@@ -37,7 +36,13 @@
             right: 90px;
         }
 
-        /* Container for the canvas to center it on the screen. */
+        #timer {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        /* Container for the canvas. Helps center it on the screen. */
         .world-container {
             height: 100%;
             width: 100%;
@@ -113,6 +118,8 @@
     <button class="button is-dark" id="mute-button">
         <span class="material-symbols-outlined" id="mute-button-icon">volume_off</span>
     </button>
+
+    <p id="timer">00:00</p>
 
     <div id="instruction">
         Tap on the screen to participate in the simulation.

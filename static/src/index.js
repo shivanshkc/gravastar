@@ -1,15 +1,19 @@
 // Gravastar uses a square screen. So, width = height = resolution
 const Resolution = 1000;
 
+// Global state for the timer.
+let lastSyncTime = 0;
+
 async function main() {
     // Get the UI elements.
     const canvas = document.getElementById("world");
     const syncButton = document.getElementById("sync-button");
     const muteButton = document.getElementById("mute-button");
     const muteButtonIcon = document.getElementById("mute-button-icon");
+    const timer = document.getElementById("timer");
 
     // Make sure all elements are found.
-    if (!canvas || !syncButton || !muteButton || !muteButtonIcon) {
+    if (!canvas || !syncButton || !muteButton || !muteButtonIcon || !timer) {
         console.error("could not find all UI elements");
         return;
     }
@@ -42,6 +46,14 @@ async function main() {
 
     // Sync state with the backend initially without blocking.
     syncButton.onclick(null);
+
+    setInterval(() => {
+        const elapsed = (Date.now() - lastSyncTime) / 1000;
+        const elapsedMin = Math.floor(elapsed / 60).toString().padStart(2, "0");
+        const elapsedSec = Math.floor(elapsed % 60).toString().padStart(2, "0");
+
+        timer.innerText = `${elapsedMin}:${elapsedSec}`;
+    }, 100);
 
     // Initialize websocket connection without blocking.
     backend.initConnection(function (message) {
@@ -194,6 +206,7 @@ function onSyncClick(engine) {
         try {
             const list = await backend.listDots();
             engine.setDots(list);
+            lastSyncTime = Date.now();
         } catch (err) {
             console.error("error in List Dots API:", err);
             // Do not disturb the local simulation.
