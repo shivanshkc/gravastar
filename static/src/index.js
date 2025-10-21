@@ -111,17 +111,17 @@ function draw(canvas, engine) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     engine.getDots().forEach(dot => {
-        // Scale position.
-        // TODO: Scale radius too.
+        // Scale position and radius.
         const posX = dot.position.x * canvas.width / Resolution;
         const posY = dot.position.y * canvas.height / Resolution;
+        const radius = dot.radius * canvas.width / Resolution;
 
         // Flag to check if this dot was created by this user.
         const ownDot = !!localStorage.getItem("dot-"+dot.id);
 
         // Draw the dot.
         ctx.beginPath();
-        ctx.arc(posX, posY, dot.radius, 0, 2 * Math.PI);
+        ctx.arc(posX, posY, radius, 0, 2 * Math.PI);
         ctx.fillStyle = ownDot ? Vec3.bulmaPrimary.toRGB() : Vec3.unit.toRGB();
         ctx.fill();
 
@@ -134,7 +134,7 @@ function draw(canvas, engine) {
             const opacity = (i + 1) / dot.trail.length * 0.5;
 
             ctx.beginPath();
-            ctx.arc(trailPosX, trailPosY, dot.radius * 0.4, 0, 2 * Math.PI);
+            ctx.arc(trailPosX, trailPosY, radius * 0.4, 0, 2 * Math.PI);
             ctx.fillStyle = ownDot ? Vec3.bulmaPrimary.toRGBA(opacity) : Vec3.unit.toRGBA(opacity);
             ctx.fill();
         }
@@ -144,7 +144,7 @@ function draw(canvas, engine) {
 
         // Draw highlight boundary.
         ctx.beginPath();
-        ctx.arc(posX, posY, dot.radius + 5, 0, 2 * Math.PI);
+        ctx.arc(posX, posY, radius + 5, 0, 2 * Math.PI);
         ctx.strokeStyle = Vec3.bulmaPrimary.toRGB();
         ctx.lineWidth = 2;
         ctx.stroke();
