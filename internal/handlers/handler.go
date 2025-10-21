@@ -79,7 +79,7 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 	dot := physics.Dot{
 		ID:       parsedID.String(),
 		Mass:     1,
-		Radius:   3,
+		Radius:   5,
 		Position: physics.Vec3{X: body.Position.X, Y: body.Position.Y, Z: 0},
 		Velocity: physics.Vec3{},
 		Color:    body.Color,

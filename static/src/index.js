@@ -21,7 +21,7 @@ async function main() {
 
     // Initialize gravity engine.
     const engine = new GravityEngine(Resolution, Resolution);
-    // Sync with backend state non-blockingly.
+    // Sync with backend state without blocking.
 
     // Attach on-click actions.
     canvas.onclick = onCanvasClick(canvas, engine);
@@ -51,7 +51,7 @@ async function main() {
                 console.warn("Unknown application event from websocket:", message.event);
                 break;
         }
-    });
+    }).then(() => {});
 
     // Start the simulation.
     render(canvas, engine);
@@ -109,11 +109,21 @@ function draw(canvas, engine) {
         const posY = dot.position.y * canvas.height / Resolution;
         const color = dot.color.mul(255);
 
-        // Draw.
+        // Draw the dot.
         ctx.beginPath();
         ctx.arc(posX, posY, dot.radius, 0, 2 * Math.PI);
         ctx.fillStyle = `rgb(${color.x}, ${color.y}, ${color.z})`;
         ctx.fill();
+
+        // Skip highlight boundary if it is someone else's dot.
+        if (!localStorage.getItem("dot-"+dot.id)) return;
+
+        // Draw highlight boundary.
+        ctx.beginPath();
+        ctx.arc(posX, posY, dot.radius + 5, 0, 2 * Math.PI);
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.stroke();
     });
 }
 
@@ -171,7 +181,8 @@ function onCanvasClick(canvas, engine) {
         const color = brightRandom();
 
         // Add the dot to the engine.
-        engine.addDot({ id, mass: 1, radius: 3, position, velocity, color });
+        engine.addDot({ id, mass: 1, radius: 5, position, velocity, color });
+        localStorage.setItem("dot-" + id, "ok");
 
         try {
             // Send new dot's info to the backend.
