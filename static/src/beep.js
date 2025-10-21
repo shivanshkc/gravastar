@@ -12,7 +12,7 @@ class Beeper {
          */
         this.buffers = {};
 
-        this.muted = false;
+        this.muted = true;
     }
 
     /**
@@ -65,6 +65,11 @@ class Beeper {
         // Collision sound needs to be loaded beforehand using the "loadCollisionSound" method.
         if (!this.buffers.collision) {
             console.warn("collision audio buffer is not loaded");
+            return;
+        }
+
+        if (this.audioContext.state === "suspended") {
+            console.warn("AudioContext state is suspended. Some user interaction is required to enable it");
             return;
         }
 

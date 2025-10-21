@@ -15,10 +15,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
+    <!-- Material icons   -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=volume_off,volume_up" />
+
     <style>
         html, body {
             height: 100vh;
             width: 100vw;
+            /* TODO: Implement visible-on-contact wall. */
             /*background-color: rgb(48, 48, 48);*/
         }
 
@@ -27,6 +31,12 @@
             position: absolute;
             bottom: 10px;
             right: 10px;
+        }
+
+        #mute-button {
+            position: absolute;
+            bottom: 10px;
+            right: 90px;
         }
 
         /* Container for the canvas to center it on the screen. */
@@ -58,6 +68,10 @@
 </head>
 <body>
     <button type="button" class="button is-primary is-dark" id="sync-button">Sync</button>
+
+    <button class="button is-dark" id="mute-button">
+        <span class="material-symbols-outlined" id="mute-button-icon">volume_off</span>
+    </button>
 
     <div class="world-container">
         <canvas id="world"></canvas>

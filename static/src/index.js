@@ -2,17 +2,15 @@
 const Resolution = 1000;
 
 async function main() {
-    // Get the canvas.
+    // Get the UI elements.
     const canvas = document.getElementById("world");
-    if (!canvas) {
-        console.error("could not find canvas");
-        return;
-    }
-
-    // Get the sync button.
     const syncButton = document.getElementById("sync-button");
-    if (!syncButton) {
-        console.error("could not find sync button");
+    const muteButton = document.getElementById("mute-button");
+    const muteButtonIcon = document.getElementById("mute-button-icon");
+
+    // Make sure all elements are found.
+    if (!canvas || !syncButton || !muteButton || !muteButtonIcon) {
+        console.error("could not find all UI elements");
         return;
     }
 
@@ -20,11 +18,18 @@ async function main() {
     correctCanvasSize(canvas);
     window.onresize = () => correctCanvasSize(canvas);
 
-    // Setup beeper without blocking.
+    // Setup beeper/sound-system without blocking.
     const beeper = new Beeper();
     beeper.loadCollisionSound()
         .then(() => console.info("Collision sound loaded."))
         .catch((err) => console.error("Failed to load collision sound:", err));
+
+    // Mute control. This is also responsible for non-suspending the AudioContext.
+    muteButton.onclick = async function(event) {
+        const current = muteButtonIcon.innerText;
+        muteButtonIcon.innerText = current === "volume_off" ? "volume_up" : "volume_off";
+        await beeper.toggleMute();
+    };
 
     // Initialize gravity engine.
     const engine = new GravityEngine(Resolution, Resolution);
