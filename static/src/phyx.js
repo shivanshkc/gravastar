@@ -6,10 +6,14 @@
  * @property {Vec3} position - The position vector.
  * @property {Vec3} velocity - The velocity vector.
  * @property {Vec3} color - The color vector in RGB format, range is [0-1].
+ * @property {Vec3[]} trail - Array of recent positions for drawing trails.
  */
 
 /** @type {number} */
 const GravitationalConstant = 1;
+
+/** @type {number} */
+const MaxTrailLength = 100;
 
 /**
  * A simple 2D gravity simulation engine that updates
@@ -59,6 +63,7 @@ class GravityEngine {
     addDot(dot) {
         if (this.ids.has(dot.id)) return;
         this.ids.add(dot.id);
+        dot.trail = [];
         this.dots.push(dot);
     }
 
@@ -95,6 +100,14 @@ class GravityEngine {
             // Second law of motion to calculate displacement.
             const halfAtSquared = totalAcceleration.mul(0.5 * deltaSec * deltaSec);
             const displacement = thisDot.velocity.mul(deltaSec).add(halfAtSquared);
+
+            // Add current position to trail before updating
+            if (!thisDot.trail) thisDot.trail = [];
+            thisDot.trail.push(new Vec3(thisDot.position.x, thisDot.position.y, thisDot.position.z));
+
+            // Cap the trail length.
+            if (thisDot.trail.length > MaxTrailLength) thisDot.trail.shift();
+
             thisDot.position = thisDot.position.add(displacement);
 
             // First law of motion of calculate final velocity.

@@ -109,6 +109,22 @@ function draw(canvas, engine) {
         const posY = dot.position.y * canvas.height / Resolution;
         const color = dot.color.mul(255);
 
+        // Draw trail.
+        if (dot.trail && dot.trail.length > 1) {
+            for (let i = 0; i < dot.trail.length - 1; i++) {
+                const trailPosX = dot.trail[i].x * canvas.width / Resolution;
+                const trailPosY = dot.trail[i].y * canvas.height / Resolution;
+
+                // Calculate opacity based on position in trail (newer = more opaque).
+                const opacity = (i + 1) / dot.trail.length * 0.5;
+
+                ctx.beginPath();
+                ctx.arc(trailPosX, trailPosY, dot.radius * 0.4, 0, 2 * Math.PI);
+                ctx.fillStyle = `rgba(${color.x}, ${color.y}, ${color.z}, ${opacity})`;
+                ctx.fill();
+            }
+        }
+
         // Draw the dot.
         ctx.beginPath();
         ctx.arc(posX, posY, dot.radius, 0, 2 * Math.PI);
