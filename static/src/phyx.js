@@ -37,6 +37,17 @@ class GravityEngine {
 
         /** @type {number} */
         this.height = height;
+
+        /** @type {Function|null} */
+        this.onCollision = null;
+    }
+
+    /**
+     * Set collision callback function
+     * @param {Function} callback - Function to call when collision occurs
+     */
+    setCollisionCallback(callback) {
+        this.onCollision = callback;
     }
 
     /**
@@ -114,22 +125,31 @@ class GravityEngine {
             thisDot.velocity = thisDot.velocity.add(totalAcceleration.mul(deltaSec));
 
             // --- Wall collisions ---
+            let collisionOccurred = false;
+
             if (thisDot.position.x - thisDot.radius <= 0) {
                 thisDot.position.x = thisDot.radius;
                 thisDot.velocity.x = -thisDot.velocity.x;
+                collisionOccurred = true;
             }
             if (thisDot.position.x + thisDot.radius >= this.width) {
                 thisDot.position.x = this.width - thisDot.radius;
                 thisDot.velocity.x = -thisDot.velocity.x;
+                collisionOccurred = true;
             }
             if (thisDot.position.y - thisDot.radius <= 0) {
                 thisDot.position.y = thisDot.radius;
                 thisDot.velocity.y = -thisDot.velocity.y;
+                collisionOccurred = true;
             }
             if (thisDot.position.y + thisDot.radius >= this.height) {
                 thisDot.position.y = this.height - thisDot.radius;
                 thisDot.velocity.y = -thisDot.velocity.y;
+                collisionOccurred = true;
             }
+
+            // Trigger collision callback if collision occurred.
+            if (collisionOccurred && this.onCollision) this.onCollision(thisDot);
 
             this.dots[i] = thisDot;
         }

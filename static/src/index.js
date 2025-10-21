@@ -9,6 +9,7 @@ async function main() {
         return;
     }
 
+    // Get the sync button.
     const syncButton = document.getElementById("sync-button");
     if (!syncButton) {
         console.error("could not find sync button");
@@ -19,13 +20,20 @@ async function main() {
     correctCanvasSize(canvas);
     window.onresize = () => correctCanvasSize(canvas);
 
+    // Setup beeper without blocking.
+    const beeper = new Beeper();
+    beeper.loadCollisionSound()
+        .then(() => console.info("Collision sound loaded."))
+        .catch((err) => console.error("Failed to load collision sound:", err));
+
     // Initialize gravity engine.
     const engine = new GravityEngine(Resolution, Resolution);
-    // Sync with backend state without blocking.
+    // Play the sound on collision.
+    engine.setCollisionCallback((dot) => beeper.playCollision());
 
     // Attach on-click actions.
     canvas.onclick = onCanvasClick(canvas, engine);
-    syncButton.onclick = (e) => onSyncClick(engine);
+    syncButton.onclick = onSyncClick(engine);
 
     // Sync state with the backend initially without blocking.
     syncButton.onclick(null);
@@ -213,10 +221,10 @@ function onCanvasClick(canvas, engine) {
 /**
  * Returns the on-click handler for the sync button.
  * @param {GravityEngine} engine
- * @returns {() => Promise<void>}
+ * @returns {(event: MouseEvent) => Promise<void>}
  */
 function onSyncClick(engine) {
-    return async function () {
+    return async function (event) {
         try {
             const list = await backend.listDots();
             engine.setDots(list);
