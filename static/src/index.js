@@ -112,6 +112,7 @@ function draw(canvas, engine) {
 
     engine.getDots().forEach(dot => {
         // Scale position.
+        // TODO: Scale radius too.
         const posX = dot.position.x * canvas.width / Resolution;
         const posY = dot.position.y * canvas.height / Resolution;
 
