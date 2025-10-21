@@ -64,6 +64,23 @@
                 height: min(calc(100vh - 2rem), calc(100vw - 2rem));
             }
         }
+
+        #instruction {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            color: grey;
+            pointer-events: none;
+            animation: instructionFadeOut 3s ease-in-out forwards;
+        }
+
+        @keyframes instructionFadeOut {
+            0% { opacity: 1; }
+            65% { opacity: 1; }
+            100% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -72,6 +89,8 @@
     <button class="button is-dark" id="mute-button">
         <span class="material-symbols-outlined" id="mute-button-icon">volume_off</span>
     </button>
+
+    <div id="instruction">Tap on the screen to participate in the simulation.</div>
 
     <div class="world-container">
         <canvas id="world"></canvas>

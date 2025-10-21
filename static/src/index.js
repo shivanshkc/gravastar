@@ -110,11 +110,6 @@ function draw(canvas, engine) {
     // Clear the canvas.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Keep the opacity settings of the instruction local to itself.
-    ctx.save();
-    drawInstruction(canvas, ctx);
-    ctx.restore();
-
     engine.getDots().forEach(dot => {
         // Scale position.
         const posX = dot.position.x * canvas.width / Resolution;
@@ -153,39 +148,6 @@ function draw(canvas, engine) {
         ctx.lineWidth = 2;
         ctx.stroke();
     });
-}
-
-// Parameters required to render the instruction text.
-drawInstruction.textOpacity = 1.0;
-drawInstruction.firstCallTimestamp = -1;
-drawInstruction.maxRenderTime = 3000;
-
-function drawInstruction(canvas, ctx) {
-    if (drawInstruction.firstCallTimestamp === -1) drawInstruction.firstCallTimestamp = Date.now();
-
-    // No write operations on these three quantities below this point. So, destructuring can be used for brevity.
-    const { firstCallTimestamp, textOpacity, maxRenderTime } = drawInstruction;
-    // Don't draw anything beyond the maxRenderTime.
-    if (Date.now() - firstCallTimestamp > maxRenderTime) return;
-
-    // Set font and styles for text.
-    ctx.font = "16px Roboto";
-    ctx.fillStyle = "grey";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Until the last second, draw with full opacity.
-    if (Date.now() - firstCallTimestamp < maxRenderTime - 1000) {
-        ctx.fillText("Tap on the screen to create gravitationally active bodies.", canvas.width / 2, canvas.height / 2);
-        return;
-    }
-
-    // Gradually reduce the opacity during the last second.
-    let opacity = ((textOpacity * maxRenderTime) - (Date.now() - firstCallTimestamp)) / 1000;
-    if (opacity < 0) return;
-
-    ctx.globalAlpha = opacity;
-    ctx.fillText("Tap on the screen to create gravitationally active bodies.", canvas.width / 2, canvas.height / 2);
 }
 
 /**
