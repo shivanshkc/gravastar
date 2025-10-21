@@ -21,6 +21,7 @@ import (
 // Handler encapsulates all REST handlers.
 //
 // TODO: Close all connections gracefully on interruption.
+// TODO: Dot Eviction Control
 type Handler struct {
 	engine   physics.GravityEngine
 	upgrader *websocket.Upgrader

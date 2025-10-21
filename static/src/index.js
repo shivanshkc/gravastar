@@ -2,7 +2,7 @@
 const Resolution = 1000;
 
 // Global state for the timer.
-let lastSyncTime = 0;
+let lastSyncTime = Date.now();
 
 async function main() {
     // Get the UI elements.

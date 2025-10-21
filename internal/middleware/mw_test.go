@@ -79,7 +79,7 @@ func TestMiddleware_CORS(t *testing.T) {
 
 	// Check the value of the allow-origin header.
 	allowOriginHeader := rec.Header().Get("Access-Control-Allow-Origin")
-	if allowOriginHeader != "*" {
+	if allowOriginHeader != "https://gravastar.shivansh.io" {
 		t.Errorf("expected the allow origin header to be * but got: %s", allowOriginHeader)
 		return
 	}
