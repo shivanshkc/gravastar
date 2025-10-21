@@ -34,6 +34,9 @@ func NewServer(addr string, staticDir string, handler *handlers.Handler) (*Serve
 		mux.HandleFunc("GET /api/dots", handler.ListDots)
 		mux.HandleFunc("GET /api/conn", handler.GetConn)
 
+		mux.HandleFunc("OPTIONS /api/dots", handler.CreateDot)
+		mux.HandleFunc("OPTIONS /api/conn", handler.GetConn)
+
 		// Health check.
 		mux.HandleFunc("GET /api", func(w http.ResponseWriter, r *http.Request) {
 			httputils.Write(w, http.StatusOK, nil, map[string]any{"code": "OK"})
@@ -45,7 +48,7 @@ func NewServer(addr string, staticDir string, handler *handlers.Handler) (*Serve
 			staticServer.ServeHTTP(w, r)
 		})
 
-		return mw.CORS(mw.AccessLogger(mw.Recovery(mux)))
+		return mw.Recovery(mw.AccessLogger(mw.CORS(mux)))
 	}()
 
 	httpServer := &http.Server{Addr: addr, ReadHeaderTimeout: time.Minute, Handler: httpHandler}

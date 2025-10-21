@@ -37,10 +37,6 @@ func NewHandler(engine physics.GravityEngine, upgrader *websocket.Upgrader, mana
 }
 
 func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
-	// TODO: Rate limiting.
-	// TODO: Only allow use from the browser.
-	// TODO: Validate color input.
-
 	var body struct {
 		ID       string       `json:"id"`
 		Position physics.Vec3 `json:"position"`

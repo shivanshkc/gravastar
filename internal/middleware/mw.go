@@ -41,14 +41,12 @@ func (m Middleware) Recovery(next http.Handler) http.Handler {
 }
 
 // CORS middleware attaches the necessary CORS headers.
-//
-// TODO: Make it secure.
 func (m Middleware) CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", "https://gravastar.shivansh.io")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "*")
-		w.Header().Set("Access-Control-Allow-Credentials", "*")
+		w.Header().Set("Access-Control-Allow-Credentials", "false")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
