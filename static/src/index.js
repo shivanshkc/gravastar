@@ -25,10 +25,10 @@ async function main() {
 
     // Attach on-click actions.
     canvas.onclick = onCanvasClick(canvas, engine);
-    syncButton.onclick = onSyncClick(engine);
+    syncButton.onclick = (e) => onSyncClick(engine);
 
     // Sync state with the backend initially without blocking.
-    syncButton.onclick();
+    syncButton.onclick(null);
 
     // Initialize websocket connection without blocking.
     backend.initConnection(function (message) {
