@@ -53,11 +53,9 @@ async function main() {
                 // Dot parameters.
                 const position = new Vec3(data.position.x, data.position.y, 0);
                 const velocity = new Vec3(data.velocity.x, data.velocity.y, data.velocity.z);
-                const color = new Vec3(data.color.x, data.color.y, data.color.z);
 
                 engine.addDot({
-                    id: data.id, mass: data.mass, radius: data.radius,
-                    position, velocity, color
+                    id: data.id, mass: data.mass, radius: data.radius, position, velocity,
                 });
                 break;
             default:
@@ -118,40 +116,40 @@ function draw(canvas, engine) {
     ctx.restore();
 
     engine.getDots().forEach(dot => {
-        // Scale position and color.
+        // Scale position.
         const posX = dot.position.x * canvas.width / Resolution;
         const posY = dot.position.y * canvas.height / Resolution;
-        const color = dot.color.mul(255);
 
-        // Draw trail.
-        if (dot.trail && dot.trail.length > 1) {
-            for (let i = 0; i < dot.trail.length - 1; i++) {
-                const trailPosX = dot.trail[i].x * canvas.width / Resolution;
-                const trailPosY = dot.trail[i].y * canvas.height / Resolution;
-
-                // Calculate opacity based on position in trail (newer = more opaque).
-                const opacity = (i + 1) / dot.trail.length * 0.5;
-
-                ctx.beginPath();
-                ctx.arc(trailPosX, trailPosY, dot.radius * 0.4, 0, 2 * Math.PI);
-                ctx.fillStyle = `rgba(${color.x}, ${color.y}, ${color.z}, ${opacity})`;
-                ctx.fill();
-            }
-        }
+        // Flag to check if this dot was created by this user.
+        const ownDot = !!localStorage.getItem("dot-"+dot.id);
 
         // Draw the dot.
         ctx.beginPath();
         ctx.arc(posX, posY, dot.radius, 0, 2 * Math.PI);
-        ctx.fillStyle = `rgb(${color.x}, ${color.y}, ${color.z})`;
+        ctx.fillStyle = ownDot ? Vec3.bulmaPrimary.toRGB() : Vec3.unit.toRGB();
         ctx.fill();
 
+        // Draw trail.
+        for (let i = 0; i < dot.trail.length - 1; i++) {
+            const trailPosX = dot.trail[i].x * canvas.width / Resolution;
+            const trailPosY = dot.trail[i].y * canvas.height / Resolution;
+
+            // Calculate opacity based on position in trail (newer = more opaque).
+            const opacity = (i + 1) / dot.trail.length * 0.5;
+
+            ctx.beginPath();
+            ctx.arc(trailPosX, trailPosY, dot.radius * 0.4, 0, 2 * Math.PI);
+            ctx.fillStyle = ownDot ? Vec3.bulmaPrimary.toRGBA(opacity) : Vec3.unit.toRGBA(opacity);
+            ctx.fill();
+        }
+
         // Skip highlight boundary if it is someone else's dot.
-        if (!localStorage.getItem("dot-"+dot.id)) return;
+        if (!ownDot) return;
 
         // Draw highlight boundary.
         ctx.beginPath();
         ctx.arc(posX, posY, dot.radius + 5, 0, 2 * Math.PI);
-        ctx.strokeStyle = "white";
+        ctx.strokeStyle = Vec3.bulmaPrimary.toRGB();
         ctx.lineWidth = 2;
         ctx.stroke();
     });
@@ -208,15 +206,14 @@ function onCanvasClick(canvas, engine) {
         const id = crypto.randomUUID();
         const position = new Vec3(x, y, 0);
         const velocity = Vec3.zero;
-        const color = brightRandom();
 
         // Add the dot to the engine.
-        engine.addDot({ id, mass: 1, radius: 5, position, velocity, color });
+        engine.addDot({ id, mass: 1, radius: 5, position, velocity, trail: [] });
         localStorage.setItem("dot-" + id, "ok");
 
         try {
             // Send new dot's info to the backend.
-            await backend.createDot(id, position, color);
+            await backend.createDot(id, position);
         } catch (err) {
             console.error("error in Create Dot API:", err);
             // Do not disturb the local simulation.
@@ -261,11 +258,14 @@ function correctCanvasSize(canvas) {
  * @returns {Vec3}
  */
 function brightRandom() {
-    return new Vec3(
-        Math.random() * 0.5 + 0.5,
-        Math.random() * 0.5 + 0.5,
-        Math.random() * 0.5 + 0.5,
-    );
+    const additional = Math.random() * 25;
+    const brightComponent = (230 + additional) / 255;
+
+    if (Math.random() < 1/3) return new Vec3(brightComponent, Math.random(), Math.random());
+    if (Math.random() < 2/3) return new Vec3(Math.random(), brightComponent, Math.random());
+    return new Vec3(Math.random(), Math.random(), brightComponent);
 }
 
-main();
+main()
+    .then(() => {})
+    .catch((err) => console.error("main error:", err));

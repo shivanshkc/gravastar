@@ -44,7 +44,6 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID       string       `json:"id"`
 		Position physics.Vec3 `json:"position"`
-		Color    physics.Vec3 `json:"color"`
 	}
 
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1024)).Decode(&body); err != nil {
@@ -82,7 +81,7 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 		Radius:   5,
 		Position: physics.Vec3{X: body.Position.X, Y: body.Position.Y, Z: 0},
 		Velocity: physics.Vec3{},
-		Color:    body.Color,
+		Color:    physics.Vec3{X: 1, Y: 1, Z: 1},
 	}
 
 	if err := h.engine.AddDot(dot); err != nil {

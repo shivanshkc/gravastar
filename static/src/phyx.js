@@ -5,7 +5,6 @@
  * @property {number} radius - The radius of the dot.
  * @property {Vec3} position - The position vector.
  * @property {Vec3} velocity - The velocity vector.
- * @property {Vec3} color - The color vector in RGB format, range is [0-1].
  * @property {Vec3[]} trail - Array of recent positions for drawing trails.
  */
 
