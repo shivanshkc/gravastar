@@ -82,8 +82,9 @@ function render(canvas, engine) {
         // Render first.
         draw(canvas, engine);
 
-        // Simulate.
-        engine.tick((timestamp - last) / 1000);
+        const deltaSec = (timestamp - last) / 1000;
+        // Basic defense against large deltas. These are observed when users switch tabs.
+        if (deltaSec < 0.1) engine.tick(deltaSec);
         last = timestamp;
 
         // Next frame.
