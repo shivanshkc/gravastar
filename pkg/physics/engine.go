@@ -18,6 +18,8 @@ type GravityEngine interface {
 	Size() (int, int)
 
 	// Run the simulation. This method returns only when the context expires.
+	//
+	// After context expiration, if Run is called again with a new context, the engine will resume from the last state.
 	Run(ctx context.Context, targetFPS uint)
 
 	// Tick advances the simulation by one step. It makes GravityEngine compatible with Game Engines like Ebiten.
@@ -36,6 +38,12 @@ type GravityEngine interface {
 	//
 	// If no Dot is found with the given ID, the returned param is false, otherwise true.
 	RemoveDot(id string) bool
+
+	// RemoveAll clears the simulation/engine.
+	RemoveAll()
+
+	// Collisions returns a read only channel. This channel emits dot that had a collision with one of the four walls.
+	Collisions() <-chan Dot
 }
 
 // gravityEngine implements the GravityEngine interface.
@@ -44,13 +52,31 @@ type gravityEngine struct {
 	mutex  *sync.RWMutex
 	width  int
 	height int
+
+	collisionChan chan Dot
 }
 
 func (g *gravityEngine) Size() (int, int) {
 	return g.width, g.height
 }
 
+func (g *gravityEngine) Collisions() <-chan Dot {
+	return g.collisionChan
+}
+
 func (g *gravityEngine) Run(ctx context.Context, targetFPS uint) {
+	// TODO: Reinitializing the channel here is not clean and is an anti-pattern. Needs better design.
+	// Make the engine resumable ========================================================
+	defer func() {
+		close(g.collisionChan)
+		g.collisionChan = nil
+	}()
+
+	if g.collisionChan == nil {
+		g.collisionChan = make(chan Dot)
+	}
+	// ==================================================================================
+
 	// Ticker provides an efficient way to run the simulation at the given target FPS.
 	ticker := time.NewTicker(time.Second / time.Duration(targetFPS))
 	defer ticker.Stop()
@@ -144,26 +170,38 @@ func (g *gravityEngine) Tick(delta time.Duration) {
 			// First law of motion to calculate the final velocity of the dot.
 			dot.Velocity = dot.Velocity.Add(totalAcceleration.Mul(deltaSec))
 
+			// --- Wall collisions ---
+			var collisionOccurred bool
+
 			// Wall collision detection and response
 			// Left wall collision
 			if dot.Position.X-dot.Radius <= 0 {
 				dot.Position.X = dot.Radius
 				dot.Velocity.X = -dot.Velocity.X
+				collisionOccurred = true
 			}
 			// Right wall collision
 			if dot.Position.X+dot.Radius >= float64(g.width) {
 				dot.Position.X = float64(g.width) - dot.Radius
 				dot.Velocity.X = -dot.Velocity.X
+				collisionOccurred = true
 			}
 			// Top wall collision
 			if dot.Position.Y-dot.Radius <= 0 {
 				dot.Position.Y = dot.Radius
 				dot.Velocity.Y = -dot.Velocity.Y
+				collisionOccurred = true
 			}
 			// Bottom wall collision
 			if dot.Position.Y+dot.Radius >= float64(g.height) {
 				dot.Position.Y = float64(g.height) - dot.Radius
 				dot.Velocity.Y = -dot.Velocity.Y
+				collisionOccurred = true
+			}
+
+			// Call collision callback.
+			if collisionOccurred {
+				g.collisionChan <- dot
 			}
 
 			calculations <- dot
@@ -208,12 +246,43 @@ func (g *gravityEngine) RemoveDot(id string) bool {
 	return true
 }
 
+func (g *gravityEngine) RemoveAll() {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
+	g.dots = nil
+}
+
 // NewGravityEngine returns a new GravityEngine implementation.
 func NewGravityEngine(width, height int) GravityEngine {
 	return &gravityEngine{
-		dots:   make(map[string]Dot),
-		mutex:  &sync.RWMutex{},
-		width:  width,
-		height: height,
+		dots:          make(map[string]Dot),
+		mutex:         &sync.RWMutex{},
+		width:         width,
+		height:        height,
+		collisionChan: make(chan Dot),
+	}
+}
+
+// RightWallCollisionRemover starts an infinite loop to listen on the Collisions channel of the engine.
+//
+// Any dot colliding with the right wall is deleted from the engine.
+//
+// The context parameter can be used to terminate the infinite loop.
+func RightWallCollisionRemover(ctx context.Context, engine GravityEngine) {
+	collisionChan := engine.Collisions()
+	width, _ := engine.Size()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case dot := <-collisionChan:
+			if dot.Position.X+dot.Radius >= float64(width) {
+				// TODO: No way of knowing when this goroutine returns.
+				// 	Manage mutexes in a more manageable way.
+				go engine.RemoveDot(dot.ID)
+			}
+		}
 	}
 }
