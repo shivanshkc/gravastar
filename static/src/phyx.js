@@ -78,20 +78,34 @@ class GravityEngine {
     }
 
     /**
+     * Remove a dot from the simulation.
+     * @param {string} id
+     */
+    removeDot(id) {
+        if (!this.ids.has(id)) return;
+        this.dots = this.dots.filter(d => d.id !== id);
+        this.ids.delete(id);
+    }
+
+    /**
      * Advances the simulation by one timestep.
      * @param {number} deltaSec - The timestep in seconds.
      */
     tick(deltaSec) {
-        if (this.dots.length === 0) return;
+        // Clone to avoid weird behaviour while looping.
+        const thisDots = [...this.dots];
 
-        for (let i = 0; i < this.dots.length; i++) {
-            const thisDot = this.dots[i];
+        if (thisDots.length === 0) return;
+
+        // Process dots in reverse order to safely remove during iteration
+        for (let i = thisDots.length - 1; i >= 0; i--) {
+            const thisDot = thisDots[i];
             let totalAcceleration = Vec3.zero;
 
-            for (let j = 0; j < this.dots.length; j++) {
+            for (let j = 0; j < thisDots.length; j++) {
                 if (i === j) continue;
 
-                const otherDot = this.dots[j];
+                const otherDot = thisDots[j];
 
                 // Calculate relative position (scaled down to avoid huge forces).
                 const distance = otherDot.position.sub(thisDot.position).div(1000);
@@ -150,7 +164,7 @@ class GravityEngine {
             // Trigger collision callback if collision occurred.
             if (collisionOccurred && this.onCollision) this.onCollision(thisDot);
 
-            this.dots[i] = thisDot;
+            thisDots[i] = thisDot;
         }
     }
 }

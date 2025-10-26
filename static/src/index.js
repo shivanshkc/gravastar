@@ -38,7 +38,14 @@ async function main() {
     // Initialize gravity engine.
     const engine = new GravityEngine(Resolution, Resolution);
     // Play the sound on collision.
-    engine.setCollisionCallback((dot) => beeper.playCollision());
+    engine.setCollisionCallback((dot) => {
+        beeper.playCollision()
+
+        if (dot.position.x + dot.radius >= Resolution) {
+            engine.removeDot(dot.id);
+            console.info("Right wall collision, dot removed");
+        }
+    });
 
     // Attach on-click actions.
     canvas.onclick = onCanvasClick(canvas, engine);
