@@ -80,6 +80,16 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 		Color:    physics.Vec3{X: 1, Y: 1, Z: 1},
 	}
 
+	dots := h.engine.Read()
+	for _, otherDot := range dots {
+		if otherDot.Position.Distance(dot.Position) < 1 {
+			slog.ErrorContext(r.Context(), "dot is too close to another dot",
+				"givenPosition", dot.Position, "otherPosition", otherDot.Position)
+			httputils.WriteErr(w, errutils.BadRequest().WithReasonStr("dot too close to another dot"))
+			return
+		}
+	}
+
 	if err := h.engine.AddDot(dot); err != nil {
 		slog.ErrorContext(r.Context(), "error adding dot", "error", err)
 

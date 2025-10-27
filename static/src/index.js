@@ -211,7 +211,13 @@ function onCanvasClick(canvas, engine) {
         const velocity = Vec3.zero;
 
         // Add the dot to the engine.
-        engine.addDot({ id, mass: 1, radius: 5, position, velocity, trail: [] });
+        const added = engine.addDot({ id, mass: 1, radius: 5, position, velocity, trail: [] });
+        if (!added) {
+            console.warn("Dot was not added.");
+            return;
+        }
+
+        // Keep a record of own created dots.
         localStorage.setItem("dot-" + id, "ok");
 
         try {

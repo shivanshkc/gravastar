@@ -80,6 +80,12 @@ func (v Vec3) Dir() Vec3 {
 	return v.Div(v.Mag())
 }
 
+// Distance to the given vector.
+func (v Vec3) Distance(arg Vec3) float64 {
+	diff := v.Sub(arg)
+	return math.Sqrt((diff.X * diff.X) + (diff.Y * diff.Y) + (diff.Z * diff.Z))
+}
+
 // Reflected calculates and returns the reflection of this vector
 // for the given normal.
 //

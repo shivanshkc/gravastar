@@ -69,12 +69,18 @@ class GravityEngine {
     /**
      * Add a new dot to the simulation.
      * @param {Dot} dot - Dot to add.
+     * @returns {boolean} - Flag to check if dot was really added.
      */
     addDot(dot) {
-        if (this.ids.has(dot.id)) return;
+        if (this.ids.has(dot.id)) return false;
+
+        for (let i = 0; i < this.dots.length; i++)
+            if (this.dots[i].position.distance(dot.position) < 1) return false;
+
         this.ids.add(dot.id);
         dot.trail = [];
         this.dots.push(dot);
+        return true;
     }
 
     /**

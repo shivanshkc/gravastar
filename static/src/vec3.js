@@ -62,6 +62,16 @@ class Vec3 {
     }
 
     /**
+     * Distance from the given vector.
+     * @param {Vec3} other
+     * @returns {number}
+     */
+    distance(other) {
+        const diff = this.sub(other);
+        return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2) + Math.pow(diff.z, 2))
+    }
+
+    /**
      * Converts the vector into an `rgb(...)` string.
      * @return {string}
      */
