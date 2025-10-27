@@ -39,6 +39,7 @@ async function main() {
     const engine = new GravityEngine(Resolution, Resolution);
     // Play the sound on collision.
     engine.setCollisionCallback((dot) => {
+        // TODO: Special sound for dot dying.
         beeper.playCollision()
 
         if (dot.position.x + dot.radius >= Resolution) {
@@ -129,6 +130,10 @@ function draw(canvas, engine) {
     // Clear the canvas.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Gradient for the right wall.
+    const wallGradientWidth = 8 * canvas.width / Resolution;
+    drawRightWallGradient(canvas, ctx, wallGradientWidth);
+
     engine.getDots().forEach(dot => {
         // Scale position and radius.
         const posX = dot.position.x * canvas.width / Resolution;
@@ -168,6 +173,19 @@ function draw(canvas, engine) {
         ctx.lineWidth = 2;
         ctx.stroke();
     });
+}
+
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} width - Width of the gradient.
+ */
+function drawRightWallGradient(canvas, ctx, width) {
+    const gradient = ctx.createLinearGradient(canvas.width - width, 0, canvas.width, 0);
+    gradient.addColorStop(0, Vec3.bulmaDanger.toRGBA(0));
+    gradient.addColorStop(1, Vec3.bulmaDanger.toRGBA(1));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(canvas.width - width, 0, width, canvas.height);
 }
 
 /**

@@ -102,3 +102,9 @@ Vec3.bulmaPrimaryDark = new Vec3(0, 102 / 255, 87 / 255);
  * @type {Vec3}
  */
 Vec3.bulmaPrimary = new Vec3(0, 209 / 255, 178 / 255);
+
+/**
+ * Bulma danger color.
+ * @type {Vec3}
+ */
+Vec3.bulmaDanger = new Vec3(255 / 255, 56 / 255, 96 / 255);
