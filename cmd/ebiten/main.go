@@ -38,7 +38,7 @@ func main() {
 }
 
 type Game struct {
-	engine       physics.GravityEngine
+	engine       *physics.GravityEngine
 	lastTickTime time.Time
 }
 

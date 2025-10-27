@@ -22,13 +22,13 @@ import (
 //
 // TODO: Close all connections gracefully on interruption.
 type Handler struct {
-	engine   physics.GravityEngine
+	engine   *physics.GravityEngine
 	upgrader *websocket.Upgrader
 	manager  *connor.Manager
 }
 
 // NewHandler returns a new instance of the Handler.
-func NewHandler(engine physics.GravityEngine, upgrader *websocket.Upgrader, manager *connor.Manager) *Handler {
+func NewHandler(engine *physics.GravityEngine, upgrader *websocket.Upgrader, manager *connor.Manager) *Handler {
 	return &Handler{
 		engine:   engine,
 		upgrader: upgrader,

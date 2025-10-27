@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"maps"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -12,217 +11,68 @@ import (
 // ErrDotAlreadyExists is returned when a new dot is attempted to be added to the Engine but its ID is not unique.
 var ErrDotAlreadyExists = errors.New("dot with same ID already exists")
 
+// ErrEngineClosed is returned when operations are attempted on a closed engine.
+var ErrEngineClosed = errors.New("engine is closed")
+
 // GravityEngine encapsulates methods to manage a gravity simulation.
-type GravityEngine interface {
-	// Size returns the width and height of the simulation respectively.
-	Size() (int, int)
-
-	// Run the simulation. This method returns only when the context expires.
-	//
-	// After context expiration, if Run is called again with a new context, the engine will resume from the last state.
-	Run(ctx context.Context, targetFPS uint)
-
-	// Tick advances the simulation by one step. It makes GravityEngine compatible with Game Engines like Ebiten.
-	//
-	// Tick and Run use the same mutex under the hoods so they can be called simultaneously.
-	Tick(delta time.Duration)
-
-	// Read the current state of the simulation.
-	Read() map[string]Dot
-
-	// AddDot adds a new Dot to the simulation. It requires the dot to have a unique ID.
-	// If it's not unique, ErrDotAlreadyExists is returned.
-	AddDot(Dot) error
-
-	// RemoveDot removes the Dot with the given ID from the simulation.
-	//
-	// If no Dot is found with the given ID, the returned param is false, otherwise true.
-	RemoveDot(id string) bool
-
-	// RemoveAll clears the simulation/engine.
-	RemoveAll()
-
-	// Collisions returns a read only channel. This channel emits dot that had a collision with one of the four walls.
-	Collisions() <-chan Dot
-}
-
-// gravityEngine implements the GravityEngine interface.
-type gravityEngine struct {
+type GravityEngine struct {
 	dots   map[string]Dot
 	mutex  *sync.RWMutex
 	width  int
 	height int
 
 	collisionChan chan Dot
+	closedChan    chan struct{}
 }
 
-func (g *gravityEngine) Size() (int, int) {
+// Size returns the width and height of the simulation respectively.
+func (g *GravityEngine) Size() (int, int) {
 	return g.width, g.height
 }
 
-func (g *gravityEngine) Collisions() <-chan Dot {
+// Collisions returns a read-only channel that emits dots that collided with one of the four walls.
+func (g *GravityEngine) Collisions() <-chan Dot {
 	return g.collisionChan
 }
 
-func (g *gravityEngine) Run(ctx context.Context, targetFPS uint) {
-	// TODO: Reinitializing the channel here is not clean and is an anti-pattern. Needs better design.
-	// Make the engine resumable ========================================================
-	defer func() {
-		close(g.collisionChan)
-		g.collisionChan = nil
-	}()
-
-	if g.collisionChan == nil {
-		g.collisionChan = make(chan Dot)
-	}
-	// ==================================================================================
-
-	// Ticker provides an efficient way to run the simulation at the given target FPS.
-	ticker := time.NewTicker(time.Second / time.Duration(targetFPS))
-	defer ticker.Stop()
-
-	timeLast := time.Now()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			timeNow := time.Now()
-			// Submit precise delta for correct physics calculations.
-			g.Tick(timeNow.Sub(timeLast))
-			timeLast = timeNow
-		}
-	}
-}
-
-// Tick calculates the gravitational effect on each Dot due to all other Dots and updates its properties
-// (position, velocity etc.). Since these calculations are time-dependent, Tick accepts a time delta.
+// Read returns a direct reference to the internal dots map for efficient access.
 //
-// For efficiency, Tick uses goroutines for calculation. The number of goroutines launched is equal to runtime.NumCPU().
-func (g *gravityEngine) Tick(delta time.Duration) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-
-	// If no dots, nothing to calculate.
-	if len(g.dots) == 0 {
-		return
-	}
-
-	// SI units.
-	deltaSec := delta.Seconds()
-
-	// To control the batch size.
-	semaphore := make(chan struct{}, runtime.NumCPU())
-	defer close(semaphore)
-
-	// To receive calculation results.
-	calculations := make(chan Dot, len(g.dots))
-	defer close(calculations)
-
-	// Create a snapshot of dots to avoid concurrent map access
-	dotsClone := maps.Clone(g.dots)
-
-	// Loop to calculate the new properties for each dot.
-	for dotID, dot := range dotsClone {
-		dotID, dot := dotID, dot
-
-		// Obtain a spot in the batch.
-		semaphore <- struct{}{}
-		go func() {
-			// Release the spot.
-			defer func() { <-semaphore }()
-
-			// Vector to aggregate all the accelerations.
-			totalAcceleration := Vec3{}
-
-			// Loop over all other dots to calculate their effect on this one.
-			for otherDotID, otherDot := range dotsClone {
-				if otherDotID == dotID {
-					continue
-				}
-
-				// Distance calculation.
-				distance := otherDot.Position.Sub(dot.Position)
-				// Scale the distance down to avoid crunching unnecessarily large numbers.
-				distance = distance.Div(1000)
-
-				// Denominator calculation as per the r-squared rule.
-				distanceMag := distance.Mag()
-				distanceMagSquared := distanceMag * distanceMag
-
-				// Softening to avoid singularities.
-				softeningSquared := 0.05 * 0.05
-				// The last distanceMag multiplication is due to vector form of the gravity equation,
-				// and so, softening should not be added to it.
-				denominator := (distanceMagSquared + softeningSquared) * distanceMag
-
-				// Acceleration calculation.
-				acceleration := distance.Mul(gravitationalConstant * otherDot.Mass / denominator)
-				totalAcceleration = totalAcceleration.Add(acceleration)
-			}
-
-			// Second law of motion to calculate the displacement due to acceleration.
-			halfAtSquared := totalAcceleration.Mul(0.5 * deltaSec * deltaSec)
-			displacement := dot.Velocity.Mul(deltaSec).Add(halfAtSquared)
-			dot.Position = dot.Position.Add(displacement)
-
-			// First law of motion to calculate the final velocity of the dot.
-			dot.Velocity = dot.Velocity.Add(totalAcceleration.Mul(deltaSec))
-
-			// --- Wall collisions ---
-			var collisionOccurred bool
-
-			// Wall collision detection and response
-			// Left wall collision
-			if dot.Position.X-dot.Radius <= 0 {
-				dot.Position.X = dot.Radius
-				dot.Velocity.X = -dot.Velocity.X
-				collisionOccurred = true
-			}
-			// Right wall collision
-			if dot.Position.X+dot.Radius >= float64(g.width) {
-				dot.Position.X = float64(g.width) - dot.Radius
-				dot.Velocity.X = -dot.Velocity.X
-				collisionOccurred = true
-			}
-			// Top wall collision
-			if dot.Position.Y-dot.Radius <= 0 {
-				dot.Position.Y = dot.Radius
-				dot.Velocity.Y = -dot.Velocity.Y
-				collisionOccurred = true
-			}
-			// Bottom wall collision
-			if dot.Position.Y+dot.Radius >= float64(g.height) {
-				dot.Position.Y = float64(g.height) - dot.Radius
-				dot.Velocity.Y = -dot.Velocity.Y
-				collisionOccurred = true
-			}
-
-			// Call collision callback.
-			if collisionOccurred {
-				g.collisionChan <- dot
-			}
-
-			calculations <- dot
-		}()
-	}
-
-	// Receive calculation results.
-	for range dotsClone {
-		dot := <-calculations
-		g.dots[dot.ID] = dot
-	}
-}
-
-func (g *gravityEngine) Read() map[string]Dot {
+// WARNING: The returned map is read-only and must NOT be modified. Modifying the map
+// will cause undefined behavior and potential data races.
+//
+// The map's content may change between calls as the simulation progresses.
+// If you need a stable snapshot that won't change, use ReadSnapshot() instead.
+func (g *GravityEngine) Read() map[string]Dot {
 	g.mutex.RLock()
 	defer g.mutex.RUnlock()
+	return g.dots
+}
 
+// ReadSnapshot returns an independent copy of the current simulation state.
+//
+// Unlike Read(), this returns a snapshot that will not be affected by subsequent
+// simulation ticks. Use this when you need to store or process the state over time.
+//
+// Warning: This method clones the entire dots map, which is expensive for large
+// simulations. Prefer Read() if you can tolerate direct references and don't need
+// a stable snapshot.
+func (g *GravityEngine) ReadSnapshot() map[string]Dot {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
 	return maps.Clone(g.dots)
 }
 
-func (g *gravityEngine) AddDot(dot Dot) error {
+// AddDot adds a new Dot to the simulation. It requires the dot to have a unique ID.
+// If it's not unique, ErrDotAlreadyExists is returned.
+// Returns ErrEngineClosed if the engine has been closed.
+func (g *GravityEngine) AddDot(dot Dot) error {
+	// Check if engine is closed by trying to receive from closedChan (non-blocking)
+	select {
+	case <-g.closedChan:
+		return ErrEngineClosed
+	default:
+	}
+
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
@@ -234,7 +84,18 @@ func (g *gravityEngine) AddDot(dot Dot) error {
 	return nil
 }
 
-func (g *gravityEngine) RemoveDot(id string) bool {
+// RemoveDot removes the Dot with the given ID from the simulation.
+//
+// If no Dot is found with the given ID, the returned param is false, otherwise true.
+// Returns false if the engine has been closed.
+func (g *GravityEngine) RemoveDot(id string) bool {
+	// Check if engine is closed
+	select {
+	case <-g.closedChan:
+		return false
+	default:
+	}
+
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
@@ -246,21 +107,103 @@ func (g *gravityEngine) RemoveDot(id string) bool {
 	return true
 }
 
-func (g *gravityEngine) RemoveAll() {
+// RemoveAll clears the simulation/engine.
+func (g *GravityEngine) RemoveAll() {
+	// Check if engine is closed
+	select {
+	case <-g.closedChan:
+		return
+	default:
+	}
+
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
+	g.dots = map[string]Dot{}
+}
+
+// Run the simulation. This method returns when either the context expires or Close() is called.
+//
+// Once Run returns, call Close() to clean up resources if it hasn't been called already.
+func (g *GravityEngine) Run(ctx context.Context, targetFPS uint) {
+	// Ticker provides an efficient way to run the simulation at the given target FPS.
+	ticker := time.NewTicker(time.Second / time.Duration(targetFPS))
+	defer ticker.Stop()
+
+	// This will be used to calculate delta for the Tick method call.
+	timeLast := time.Now()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-g.closedChan:
+			return
+		case <-ticker.C:
+			timeNow := time.Now()
+			g.Tick(timeNow.Sub(timeLast))
+			timeLast = timeNow
+		}
+	}
+}
+
+// Tick advances the simulation by one time step. It calculates the gravitational effect on each Dot due to all other
+// Dots and updates its properties (position, velocity etc.). This method makes the simulation compatible with game
+// engines like Ebiten.
+//
+// For efficiency, Tick uses goroutines for calculation. The number of goroutines launched is equal to the number of dots.
+//
+// Tick can be called manually for integration with external game loops. Do not call Tick while Run is active -
+// they share the same mutex and will result in unpredictable timing.
+func (g *GravityEngine) Tick(delta time.Duration) {
+	// Check if engine is closed
+	select {
+	case <-g.closedChan:
+		return
+	default:
+	}
+
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
+	// Perform the physics simulation.
+	tick(g.width, g.height, g.dots, delta, g.collisionChan)
+}
+
+// Close shuts down the engine and releases resources.
+//
+// This closes the collision channel, which will cause any readers to eventually
+// receive a closed channel signal. If Run() is active, it will return immediately.
+// Once closed, the engine cannot be reused.
+//
+// It's safe to call Close multiple times.
+func (g *GravityEngine) Close() error {
+	// Check if already closed (non-blocking check)
+	select {
+	case <-g.closedChan:
+		return nil
+	default:
+	}
+
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
+	// Close both channels to signal shutdown
+	close(g.collisionChan)
+	close(g.closedChan)
 	g.dots = nil
+	return nil
 }
 
 // NewGravityEngine returns a new GravityEngine implementation.
-func NewGravityEngine(width, height int) GravityEngine {
-	return &gravityEngine{
+func NewGravityEngine(width, height int) *GravityEngine {
+	return &GravityEngine{
 		dots:          make(map[string]Dot),
 		mutex:         &sync.RWMutex{},
 		width:         width,
 		height:        height,
 		collisionChan: make(chan Dot),
+		closedChan:    make(chan struct{}),
 	}
 }
 
@@ -269,7 +212,9 @@ func NewGravityEngine(width, height int) GravityEngine {
 // Any dot colliding with the right wall is deleted from the engine.
 //
 // The context parameter can be used to terminate the infinite loop.
-func RightWallCollisionRemover(ctx context.Context, engine GravityEngine) {
+//
+// Note: This function spawns a goroutine for each removal to avoid deadlock with Tick's mutex.
+func RightWallCollisionRemover(ctx context.Context, engine *GravityEngine) {
 	collisionChan := engine.Collisions()
 	width, _ := engine.Size()
 
@@ -277,10 +222,14 @@ func RightWallCollisionRemover(ctx context.Context, engine GravityEngine) {
 		select {
 		case <-ctx.Done():
 			return
-		case dot := <-collisionChan:
+		case dot, ok := <-collisionChan:
+			if !ok {
+				// Channel closed, engine is shutting down
+				return
+			}
+
 			if dot.Position.X+dot.Radius >= float64(width) {
-				// TODO: No way of knowing when this goroutine returns.
-				// 	Manage mutexes in a more manageable way.
+				// Launch in goroutine to avoid deadlock.
 				go engine.RemoveDot(dot.ID)
 			}
 		}
