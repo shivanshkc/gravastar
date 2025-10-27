@@ -115,6 +115,7 @@ class GravityEngine {
                 // Avoid infinite acceleration at short range.
                 const softeningSquared = 0.05 * 0.05;
                 const denominator = (distanceMagSquared + softeningSquared) * distanceMag;
+                if (denominator === 0) continue;
 
                 // Newton's Gravitation formula (vector form).
                 const acceleration = distance.mul(GravitationalConstant * otherDot.mass / denominator);

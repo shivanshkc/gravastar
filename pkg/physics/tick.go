@@ -60,6 +60,9 @@ func tick(width, height int, dots map[string]Dot, delta time.Duration, collision
 				// Denominator for gravity equation: (r² + ε²) * r
 				// The extra distanceMag factor is for the vector form of the equation.
 				denominator := (distanceMagSquared + softeningSquared) * distanceMag
+				if denominator == 0 {
+					continue
+				}
 
 				// Calculate acceleration using Newton's law of gravitation: a = G * m / r²
 				// Vector form ensures acceleration points toward the other dot.

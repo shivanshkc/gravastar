@@ -24,9 +24,14 @@ async function main() {
 
     // Setup beeper/sound-system without blocking.
     const beeper = new Beeper();
+
     beeper.loadCollisionSound()
         .then(() => console.info("Collision sound loaded."))
         .catch((err) => console.error("Failed to load collision sound:", err));
+
+    beeper.loadDeathSound()
+        .then(() => console.info("Death sound loaded."))
+        .catch((err) => console.error("Failed to load death sound:", err));
 
     // Mute control. This is also responsible for non-suspending the AudioContext.
     muteButton.onclick = async function(event) {
@@ -39,13 +44,11 @@ async function main() {
     const engine = new GravityEngine(Resolution, Resolution);
     // Play the sound on collision.
     engine.setCollisionCallback((dot) => {
-        // TODO: Special sound for dot dying.
-        beeper.playCollision()
-
         if (dot.position.x + dot.radius >= Resolution) {
             engine.removeDot(dot.id);
+            beeper.playDeath();
             console.info("Right wall collision, dot removed");
-        }
+        } else beeper.playCollision();
     });
 
     // Attach on-click actions.
