@@ -68,27 +68,15 @@ class Beeper {
         for (let i = 0; i < data.length; i++) {
             const t = i / sampleRate;
 
-            // Sharp frequency drop from 600Hz to 80Hz (more dramatic).
-            const startFreq = 600;
-            const endFreq = 80;
-            const frequency = startFreq * Math.pow(endFreq / startFreq, Math.pow(t / duration, 2));
+            // Frequency ramp from 400Hz to 50Hz over duration (lower, more ominous).
+            const startFreq = 400;
+            const endFreq = 50;
+            const frequency = startFreq * Math.pow(endFreq / startFreq, t / duration);
 
-            // Sharp attack then quick decay
-            let gain;
-            if (t < 0.02) {
-                gain = 0.4 * (t / 0.02); // Quick attack
-            } else {
-                gain = 0.4 * Math.pow(0.001 / 0.4, (t - 0.02) / (duration - 0.02)); // Sharp decay
-            }
-
-            // Add some noise for a more organic death sound
-            const noise = (Math.random() - 0.5) * 0.1 * gain;
-            
-            // Generate the waveform with some harmonics
-            const fundamental = Math.sin(2 * Math.PI * frequency * t);
-            const harmonic = Math.sin(2 * Math.PI * frequency * 2 * t) * 0.3;
-            
-            data[i] = (fundamental + harmonic) * gain + noise;
+            // Gain envelope: starts at 0.2, exponentially decays to 0.001
+            const gain = 0.2 * Math.pow(0.001 / 0.2, t / duration);
+            // Generate the waveform.
+            data[i] = Math.sin(2 * Math.PI * frequency * t) * gain;
         }
 
         this.buffers.death = buffer;

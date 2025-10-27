@@ -98,7 +98,7 @@ class GravityEngine {
         if (thisDots.length === 0) return;
 
         // Process dots in reverse order to safely remove during iteration
-        for (let i = thisDots.length - 1; i >= 0; i--) {
+        for (let i = 0; i < thisDots.length; i++) {
             const thisDot = thisDots[i];
             let totalAcceleration = Vec3.zero;
 
@@ -115,7 +115,7 @@ class GravityEngine {
                 // Avoid infinite acceleration at short range.
                 const softeningSquared = 0.05 * 0.05;
                 const denominator = (distanceMagSquared + softeningSquared) * distanceMag;
-                if (denominator === 0) continue;
+                if (denominator < 0.0001) continue;
 
                 // Newton's Gravitation formula (vector form).
                 const acceleration = distance.mul(GravitationalConstant * otherDot.mass / denominator);
@@ -126,10 +126,9 @@ class GravityEngine {
             const halfAtSquared = totalAcceleration.mul(0.5 * deltaSec * deltaSec);
             const displacement = thisDot.velocity.mul(deltaSec).add(halfAtSquared);
 
-            // Add current position to trail before updating
+            // Add current position to trail before updating.
             if (!thisDot.trail) thisDot.trail = [];
             thisDot.trail.push(new Vec3(thisDot.position.x, thisDot.position.y, thisDot.position.z));
-
             // Cap the trail length.
             if (thisDot.trail.length > MaxTrailLength) thisDot.trail.shift();
 
