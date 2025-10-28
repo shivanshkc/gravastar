@@ -10,10 +10,9 @@ const backend = {
      * Create a new dot on the backend.
      * @param {string} id - Unique ID of the dot
      * @param {Vec3} position - Position of the dot
-     * @param {Vec3} color - Color of the dot
      */
-    createDot: async function (id, position, color) {
-        const body = JSON.stringify({ id, position, color });
+    createDot: async function (id, position) {
+        const body = JSON.stringify({ id, position });
         const response = await fetch(BackendAddr + "/api/dots", { method: "POST", body });
         if (!response.ok)
             throw new Error("response has non-2xx status code: " + response.status.toString());
@@ -27,15 +26,16 @@ const backend = {
         if (!response.ok)
             throw new Error("response has non-2xx status code: " + response.status.toString());
 
-        /** @type {Object<string, Dot>} */
-        const map = await response.json();
+        /** @type {{[key: string]: Dot}} */
+        const body = await response.json();
 
-        return Object.values(map).map(v => ({
-            ...v,
-            position: new Vec3(v.position.x, v.position.y, v.position.z),
-            velocity: new Vec3(v.velocity.x, v.velocity.y, v.velocity.z),
-            color: new Vec3(v.color.x, v.color.y, v.color.z),
-        }));
+        // Explicitly convert vectors to the Vec3 type to access methods.
+        return Object.values(body).map(d => {
+            d.trail = [];
+            d.position =  new Vec3(d.position.x, d.position.y, d.position.z);
+            d.velocity = new Vec3(d.velocity.x, d.velocity.y, d.velocity.z);
+            return d;
+        });
     },
     /**
      * Initialize a websocket connection with the backend.

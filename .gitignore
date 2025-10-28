@@ -6,6 +6,9 @@ bin
 .idea
 .vscode
 
+# AI
+prompts
+
 # Configs
 config/config.json
 

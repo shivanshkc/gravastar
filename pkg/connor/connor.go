@@ -93,6 +93,7 @@ func (m *Manager) Register(ctx context.Context, conn *websocket.Conn) error {
 				"remoteAddr", conn.RemoteAddr(), "error", err)
 			m.deleteConnectionSafe(conn)
 		}
+
 		return nil
 	})
 
@@ -141,6 +142,8 @@ func (m *Manager) Broadcast(ctx context.Context, messageType int, data []byte) e
 		deadline = time.Now().Add(m.pingInterval)
 		m.logger.ErrorContext(ctx, "context deadline not set, using ping interval as deadline",
 			"deadline", deadline)
+	} else {
+		m.logger.InfoContext(ctx, "context deadline set", "deadline", deadline)
 	}
 
 	// Use PreparedMessage for efficiency.
@@ -156,12 +159,24 @@ func (m *Manager) Broadcast(ctx context.Context, messageType int, data []byte) e
 	m.connectionsMutex.RLock()
 	defer m.connectionsMutex.RUnlock()
 
+	wg.Add(len(m.connections))
+
 	for conn := range m.connections {
 		// Capture loop var.
 		conn := conn
 
 		// Write without blocking.
-		wg.Go(func() {
+		go func() {
+			defer wg.Done()
+
+			defer func() {
+				// Reset write deadline. Otherwise, ping would fail.
+				if err := conn.SetWriteDeadline(time.Time{}); err != nil {
+					m.logger.Error("failed to reset write deadline", "remoteAddr", conn.RemoteAddr(), "error", err)
+					return
+				}
+			}()
+
 			if err := conn.SetWriteDeadline(deadline); err != nil {
 				m.logger.Error("failed to set write deadline", "remoteAddr", conn.RemoteAddr(), "error", err)
 				return
@@ -171,7 +186,7 @@ func (m *Manager) Broadcast(ctx context.Context, messageType int, data []byte) e
 				m.logger.Error("failed to write message", "remoteAddr", conn.RemoteAddr(), "error", err)
 				return
 			}
-		})
+		}()
 	}
 
 	wg.Wait()

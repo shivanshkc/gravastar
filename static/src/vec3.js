@@ -60,10 +60,61 @@ class Vec3 {
     mag() {
         return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
     }
+
+    /**
+     * Distance from the given vector.
+     * @param {Vec3} other
+     * @returns {number}
+     */
+    distance(other) {
+        const diff = this.sub(other);
+        return Math.sqrt(Math.pow(diff.x, 2) + Math.pow(diff.y, 2) + Math.pow(diff.z, 2))
+    }
+
+    /**
+     * Converts the vector into an `rgb(...)` string.
+     * @return {string}
+     */
+    toRGB() {
+        return `rgb(${this.x * 255}, ${this.y * 255}, ${this.z * 255})`
+    }
+
+    /**
+     * Converts the vector into an `rgba(...)` string.
+     * @param {number} opacity - The fourth component.
+     * @return {string}
+     */
+    toRGBA(opacity) {
+        return `rgba(${this.x * 255}, ${this.y * 255}, ${this.z * 255}, ${opacity})`
+    }
 }
 
 /**
- * A static zero vector (0, 0, 0).
+ * The zero vector (0, 0, 0). Can be used as the black color as well.
  * @type {Vec3}
  */
 Vec3.zero = new Vec3(0, 0, 0);
+
+/**
+ * The unit vector with all components 1. Can be used as the white color as well.
+ * @type {Vec3}
+ */
+Vec3.unit = new Vec3(1, 1, 1);
+
+/**
+ * Bulma primary dark color.
+ * @type {Vec3}
+ */
+Vec3.bulmaPrimaryDark = new Vec3(0, 102 / 255, 87 / 255);
+
+/**
+ * Bulma primary color.
+ * @type {Vec3}
+ */
+Vec3.bulmaPrimary = new Vec3(0, 209 / 255, 178 / 255);
+
+/**
+ * Bulma danger color.
+ * @type {Vec3}
+ */
+Vec3.bulmaDanger = new Vec3(255 / 255, 56 / 255, 96 / 255);

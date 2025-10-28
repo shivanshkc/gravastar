@@ -42,6 +42,9 @@ func main() {
 
 	// Initialize the HTTP server.
 	engine := physics.NewGravityEngine(1000, 1000)
+	// Engine cleanup.
+	go physics.RightWallCollisionRemover(ctx, engine)
+
 	go func() {
 		slog.InfoContext(ctx, "starting gravity engine")
 		engine.Run(ctx, conf.TargetFPS)

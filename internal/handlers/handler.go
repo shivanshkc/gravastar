@@ -22,13 +22,13 @@ import (
 //
 // TODO: Close all connections gracefully on interruption.
 type Handler struct {
-	engine   physics.GravityEngine
+	engine   *physics.GravityEngine
 	upgrader *websocket.Upgrader
 	manager  *connor.Manager
 }
 
 // NewHandler returns a new instance of the Handler.
-func NewHandler(engine physics.GravityEngine, upgrader *websocket.Upgrader, manager *connor.Manager) *Handler {
+func NewHandler(engine *physics.GravityEngine, upgrader *websocket.Upgrader, manager *connor.Manager) *Handler {
 	return &Handler{
 		engine:   engine,
 		upgrader: upgrader,
@@ -37,14 +37,9 @@ func NewHandler(engine physics.GravityEngine, upgrader *websocket.Upgrader, mana
 }
 
 func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
-	// TODO: Rate limiting.
-	// TODO: Only allow use from the browser.
-	// TODO: Validate color input.
-
 	var body struct {
 		ID       string       `json:"id"`
 		Position physics.Vec3 `json:"position"`
-		Color    physics.Vec3 `json:"color"`
 	}
 
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1024)).Decode(&body); err != nil {
@@ -79,10 +74,20 @@ func (h *Handler) CreateDot(w http.ResponseWriter, r *http.Request) {
 	dot := physics.Dot{
 		ID:       parsedID.String(),
 		Mass:     1,
-		Radius:   3,
+		Radius:   5,
 		Position: physics.Vec3{X: body.Position.X, Y: body.Position.Y, Z: 0},
 		Velocity: physics.Vec3{},
-		Color:    body.Color,
+		Color:    physics.Vec3{X: 1, Y: 1, Z: 1},
+	}
+
+	dots := h.engine.Read()
+	for _, otherDot := range dots {
+		if otherDot.Position.Distance(dot.Position) < 1 {
+			slog.ErrorContext(r.Context(), "dot is too close to another dot",
+				"givenPosition", dot.Position, "otherPosition", otherDot.Position)
+			httputils.WriteErr(w, errutils.BadRequest().WithReasonStr("dot too close to another dot"))
+			return
+		}
 	}
 
 	if err := h.engine.AddDot(dot); err != nil {

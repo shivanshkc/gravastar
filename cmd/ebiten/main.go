@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"image/color"
 	"strconv"
@@ -37,13 +38,17 @@ func main() {
 }
 
 type Game struct {
-	engine       physics.GravityEngine
+	engine       *physics.GravityEngine
 	lastTickTime time.Time
 }
 
 func NewGame() *Game {
+	engine := physics.NewGravityEngine(screenWidth, screenHeight)
+	// Engine cleanup.
+	go physics.RightWallCollisionRemover(context.Background(), engine)
+
 	return &Game{
-		engine:       physics.NewGravityEngine(screenWidth, screenHeight),
+		engine:       engine,
 		lastTickTime: time.Now(),
 	}
 }
@@ -60,7 +65,7 @@ func (g *Game) Update() error {
 
 	// Handle R key to reset simulation.
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-		g.engine = physics.NewGravityEngine(screenWidth, screenHeight)
+		g.engine.RemoveAll()
 	}
 
 	timeNow := time.Now()

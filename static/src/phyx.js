@@ -5,11 +5,14 @@
  * @property {number} radius - The radius of the dot.
  * @property {Vec3} position - The position vector.
  * @property {Vec3} velocity - The velocity vector.
- * @property {Vec3} color - The color vector in RGB format, range is [0-1].
+ * @property {Vec3[]} trail - Array of recent positions for drawing trails.
  */
 
 /** @type {number} */
 const GravitationalConstant = 1;
+
+/** @type {number} */
+const MaxTrailLength = 100;
 
 /**
  * A simple 2D gravity simulation engine that updates
@@ -33,6 +36,17 @@ class GravityEngine {
 
         /** @type {number} */
         this.height = height;
+
+        /** @type {Function|null} */
+        this.onCollision = null;
+    }
+
+    /**
+     * Set collision callback function
+     * @param {Function} callback - Function to call when collision occurs
+     */
+    setCollisionCallback(callback) {
+        this.onCollision = callback;
     }
 
     /**
@@ -55,11 +69,28 @@ class GravityEngine {
     /**
      * Add a new dot to the simulation.
      * @param {Dot} dot - Dot to add.
+     * @returns {boolean} - Flag to check if dot was really added.
      */
     addDot(dot) {
-        if (this.ids.has(dot.id)) return;
+        if (this.ids.has(dot.id)) return false;
+
+        for (let i = 0; i < this.dots.length; i++)
+            if (this.dots[i].position.distance(dot.position) < 1) return false;
+
         this.ids.add(dot.id);
+        dot.trail = [];
         this.dots.push(dot);
+        return true;
+    }
+
+    /**
+     * Remove a dot from the simulation.
+     * @param {string} id
+     */
+    removeDot(id) {
+        if (!this.ids.has(id)) return;
+        this.dots = this.dots.filter(d => d.id !== id);
+        this.ids.delete(id);
     }
 
     /**
@@ -67,16 +98,20 @@ class GravityEngine {
      * @param {number} deltaSec - The timestep in seconds.
      */
     tick(deltaSec) {
-        if (this.dots.length === 0) return;
+        // Clone to avoid weird behaviour while looping.
+        const thisDots = [...this.dots];
 
-        for (let i = 0; i < this.dots.length; i++) {
-            const thisDot = this.dots[i];
+        if (thisDots.length === 0) return;
+
+        // Process dots in reverse order to safely remove during iteration
+        for (let i = 0; i < thisDots.length; i++) {
+            const thisDot = thisDots[i];
             let totalAcceleration = Vec3.zero;
 
-            for (let j = 0; j < this.dots.length; j++) {
+            for (let j = 0; j < thisDots.length; j++) {
                 if (i === j) continue;
 
-                const otherDot = this.dots[j];
+                const otherDot = thisDots[j];
 
                 // Calculate relative position (scaled down to avoid huge forces).
                 const distance = otherDot.position.sub(thisDot.position).div(1000);
@@ -86,6 +121,7 @@ class GravityEngine {
                 // Avoid infinite acceleration at short range.
                 const softeningSquared = 0.05 * 0.05;
                 const denominator = (distanceMagSquared + softeningSquared) * distanceMag;
+                if (denominator < 0.0001) continue;
 
                 // Newton's Gravitation formula (vector form).
                 const acceleration = distance.mul(GravitationalConstant * otherDot.mass / denominator);
@@ -95,30 +131,46 @@ class GravityEngine {
             // Second law of motion to calculate displacement.
             const halfAtSquared = totalAcceleration.mul(0.5 * deltaSec * deltaSec);
             const displacement = thisDot.velocity.mul(deltaSec).add(halfAtSquared);
+
+            // Add current position to trail before updating.
+            if (!thisDot.trail) thisDot.trail = [];
+            thisDot.trail.push(new Vec3(thisDot.position.x, thisDot.position.y, thisDot.position.z));
+            // Cap the trail length.
+            if (thisDot.trail.length > MaxTrailLength) thisDot.trail.shift();
+
             thisDot.position = thisDot.position.add(displacement);
 
             // First law of motion of calculate final velocity.
             thisDot.velocity = thisDot.velocity.add(totalAcceleration.mul(deltaSec));
 
             // --- Wall collisions ---
+            let collisionOccurred = false;
+
             if (thisDot.position.x - thisDot.radius <= 0) {
                 thisDot.position.x = thisDot.radius;
                 thisDot.velocity.x = -thisDot.velocity.x;
+                collisionOccurred = true;
             }
             if (thisDot.position.x + thisDot.radius >= this.width) {
                 thisDot.position.x = this.width - thisDot.radius;
                 thisDot.velocity.x = -thisDot.velocity.x;
+                collisionOccurred = true;
             }
             if (thisDot.position.y - thisDot.radius <= 0) {
                 thisDot.position.y = thisDot.radius;
                 thisDot.velocity.y = -thisDot.velocity.y;
+                collisionOccurred = true;
             }
             if (thisDot.position.y + thisDot.radius >= this.height) {
                 thisDot.position.y = this.height - thisDot.radius;
                 thisDot.velocity.y = -thisDot.velocity.y;
+                collisionOccurred = true;
             }
 
-            this.dots[i] = thisDot;
+            // Trigger collision callback if collision occurred.
+            if (collisionOccurred && this.onCollision) this.onCollision(thisDot);
+
+            thisDots[i] = thisDot;
         }
     }
 }
