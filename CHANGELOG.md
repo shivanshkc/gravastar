@@ -1,3 +1,34 @@
+# [1.1.0](https://github.com/shivanshkc/gravastar/compare/v1.0.2...v1.1.0) (2025-10-28)
+
+
+### Bug Fixes
+
+* **core:** gravity engine Close method ([73ae0af](https://github.com/shivanshkc/gravastar/commit/73ae0af483eed2ce4385a8ed09d89698462da245))
+* **http:** add CORS ([a439494](https://github.com/shivanshkc/gravastar/commit/a4394940ac15172d33f3dadd8f2e8b5c2859681b))
+* **http:** websocket write timeout bug fix ([095151f](https://github.com/shivanshkc/gravastar/commit/095151ff51d0e44f76bf2253bf9d8127357742f6))
+* **physics:** better NaN protection and death sound ([827dfc5](https://github.com/shivanshkc/gravastar/commit/827dfc5ad08c5278a079d881bc224bb2fa5e5ce5))
+* **physics:** defend against large deltas ([95e3816](https://github.com/shivanshkc/gravastar/commit/95e38161ad43bd132d70a59bc06ade6dc9afe1b5))
+* **physics:** scale radius along with other vectors ([998429f](https://github.com/shivanshkc/gravastar/commit/998429f320216c7179a0d8e5624c5e9768ea63b6))
+* **ui:** fix initial timer value, add TODO ([eee154e](https://github.com/shivanshkc/gravastar/commit/eee154e0d8d1f896888b226bf1e485d199009d08))
+* **ui:** responsive instruction text ([1cbdf62](https://github.com/shivanshkc/gravastar/commit/1cbdf621157ac831b372c31dda9a78c81839894e))
+
+
+### Features
+
+* **physics:** do not allow overlapping dot creation ([672dcc9](https://github.com/shivanshkc/gravastar/commit/672dcc938e08b4f660db83a5c753e3d13599cb9f))
+* **physics:** right wall collision removal ([37519a1](https://github.com/shivanshkc/gravastar/commit/37519a1efed8a8c713ca063881697a00206d59a9))
+* **ui:** add collision sound effect ([efee40b](https://github.com/shivanshkc/gravastar/commit/efee40b011d8ed7af703b86b6be27bdaf62c116d))
+* **ui:** add danger gradient for the right wall ([fd8dd0b](https://github.com/shivanshkc/gravastar/commit/fd8dd0b6a096e4a43fc7dfc873819ce28a3d1e31))
+* **ui:** add dot trails ([20fcf7c](https://github.com/shivanshkc/gravastar/commit/20fcf7c75c6627eefc4cbcafcd2604f14e0d7ba9))
+* **ui:** add instructional text with fade out ([fdab18c](https://github.com/shivanshkc/gravastar/commit/fdab18c10534694b32a1373c5b11d85e987db52c))
+* **ui:** add timer ([decac2a](https://github.com/shivanshkc/gravastar/commit/decac2a7a8f147e6f77a4b0aa8cbb9a049b1aab8))
+* **ui:** death sound and NaN protection ([23acdd7](https://github.com/shivanshkc/gravastar/commit/23acdd70ce5a34a3e392efeeb534bd89f7b4a5d2))
+* **ui:** delete dot upon right wall collision ([079116a](https://github.com/shivanshkc/gravastar/commit/079116acebf680ba5a4a2f5025d5025d33bffda0))
+* **ui:** hightlight boundaries for own dots ([411751d](https://github.com/shivanshkc/gravastar/commit/411751da8be057b8299a8f0e64786a5b86fad840))
+* **ui:** mute button control ([73bb37e](https://github.com/shivanshkc/gravastar/commit/73bb37e0daeceb3307c673221f79889cf4fe5096))
+* **ui:** theme-based dot coloring ([8121c01](https://github.com/shivanshkc/gravastar/commit/8121c019658f20b0a3979aa145a2cd88d724ecc4))
+* **ui:** use bulma css, invert colors, move sync to bottom ([df4f53c](https://github.com/shivanshkc/gravastar/commit/df4f53cd631667cc6341e4aa1fa83b9948bf8b2c))
+
 ## [1.0.2](https://github.com/shivanshkc/gravastar/compare/v1.0.1...v1.0.2) (2025-10-17)
 
 
